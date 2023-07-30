@@ -5,6 +5,8 @@ edition = "2021"
 
 [dependencies]
 bevy = { version = "0.10.1", features = ["dynamic_linking"] }
+bevy_eventlistener = "0.2.2"
+bevy_mod_picking = "0.14.0"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]

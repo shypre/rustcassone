@@ -1,13 +1,20 @@
 #[derive(Copy, Clone)]
 pub enum AreaType {
     Unspecified,
-    Meadow,
+    Farm,
     Road,
-    RoadTerminus,
-    City,
-    CityPennant,
+    EndRoad,
+    Town,
+    PennantTown,
     Cloister,
-    River,
+    Water,
+}
+
+#[derive(Copy, Clone)]
+pub enum TileType {
+    Unspecified,
+    FRF_FFF_FRF_FFF,
+    FFF_FRF_FRF_FFF,
 }
 
 pub enum TeamColor {
@@ -62,49 +69,52 @@ fn make_tile_area_connections(areas: &mut Vec<TileArea>, conns: Vec<[TileAreaInd
 
 pub struct Tile {
     areas: Vec<TileAreaIndex>,
+    tile_type: TileType,
 }
 
 // Indices start from 0 on right edge top node and go clockwise based on
 // https://en.wikipedia.org/wiki/Carcassonne_(board_game)#Tiles
 
-fn get_mrm_mmm_mrm_mmm(all_areas: &mut Vec<TileArea>) -> Tile {
+fn get_frf_fff_frf_fff(all_areas: &mut Vec<TileArea>) -> Tile {
     let offs: TileAreaIndex = all_areas.len();
 
     let mut areas: Vec<TileArea> = vec![
-        create_area(AreaType::Meadow, vec![0, 8, 9, 10, 11]),
+        create_area(AreaType::Farm, vec![0, 8, 9, 10, 11]),
         create_area(AreaType::Road, vec![1, 7]),
-        create_area(AreaType::Meadow, vec![2, 3, 4, 5, 6]),
+        create_area(AreaType::Farm, vec![2, 3, 4, 5, 6]),
     ];
     let idxs: Vec<TileAreaIndex> = fill_area_idxs(&mut areas, offs);
     
     all_areas.append(&mut areas);
     return Tile {
-        areas: idxs
+        areas: idxs,
+        tile_type: TileType::FRF_FFF_FRF_FFF,
     };
 }
 
-fn get_mmm_mrm_mrm_mmm(all_areas: &mut Vec<TileArea>) -> Tile {
+fn get_fff_frf_frf_fff(all_areas: &mut Vec<TileArea>) -> Tile {
     let offs: TileAreaIndex = all_areas.len();
 
     let mut areas: Vec<TileArea> = vec![
-        create_area(AreaType::Meadow, vec![0, 1, 2, 3, 8, 9, 10, 11]),
+        create_area(AreaType::Farm, vec![0, 1, 2, 3, 8, 9, 10, 11]),
         create_area(AreaType::Road, vec![4, 7]),
-        create_area(AreaType::Meadow, vec![5, 6]),
+        create_area(AreaType::Farm, vec![5, 6]),
     ];
     let idxs: Vec<TileAreaIndex> = fill_area_idxs(&mut areas, offs);
     
     all_areas.append(&mut areas);
     return Tile {
-        areas: idxs
+        areas: idxs,
+        tile_type: TileType::FFF_FRF_FRF_FFF,
     };
 }
 
 pub fn create_tiles(all_areas: &mut Vec<TileArea>, all_tiles: &mut Vec<Tile>) {
     for _i in [0..8] {
-        all_tiles.push(get_mrm_mmm_mrm_mmm(all_areas));
+        all_tiles.push(get_frf_fff_frf_fff(all_areas));
     }
     for _i in [0..9] {
-        all_tiles.push(get_mmm_mrm_mrm_mmm(all_areas));
+        all_tiles.push(get_fff_frf_frf_fff(all_areas));
     }
 }
 
