@@ -1,3 +1,5 @@
+use bevy::prelude::Resource;
+
 #[derive(Copy, Clone)]
 pub enum AreaType {
     Unspecified,
@@ -45,7 +47,7 @@ fn create_area(area_type: AreaType, edges: Vec<EdgeNumber>) -> TileArea {
         self_idx: 0,
         edges,
         connected_areas: vec![],
-    }
+    };
 }
 
 fn fill_area_idxs(areas: &mut Vec<TileArea>, offset: TileAreaIndex) -> Vec<TileAreaIndex> {
@@ -59,17 +61,24 @@ fn fill_area_idxs(areas: &mut Vec<TileArea>, offset: TileAreaIndex) -> Vec<TileA
     return idxs;
 }
 
-fn make_tile_area_connections(areas: &mut Vec<TileArea>, conns: Vec<[TileAreaIndex; 2]>, offset: TileAreaIndex) {
+fn make_tile_area_connections(
+    areas: &mut Vec<TileArea>,
+    conns: Vec<[TileAreaIndex; 2]>,
+    offset: TileAreaIndex,
+) {
     for conn in conns {
-        areas[offset + conn[0]].connected_areas.push(offset + conn[1]);
-        areas[offset + conn[1]].connected_areas.push(offset + conn[0]);
+        areas[offset + conn[0]]
+            .connected_areas
+            .push(offset + conn[1]);
+        areas[offset + conn[1]]
+            .connected_areas
+            .push(offset + conn[0]);
     }
 }
 
-
 pub struct Tile {
-    areas: Vec<TileAreaIndex>,
-    tile_type: TileType,
+    pub areas: Vec<TileAreaIndex>,
+    pub tile_type: TileType,
 }
 
 // Indices start from 0 on right edge top node and go clockwise based on
@@ -84,7 +93,7 @@ fn get_frf_fff_frf_fff(all_areas: &mut Vec<TileArea>) -> Tile {
         create_area(AreaType::Farm, vec![2, 3, 4, 5, 6]),
     ];
     let idxs: Vec<TileAreaIndex> = fill_area_idxs(&mut areas, offs);
-    
+
     all_areas.append(&mut areas);
     return Tile {
         areas: idxs,
@@ -101,7 +110,7 @@ fn get_fff_frf_frf_fff(all_areas: &mut Vec<TileArea>) -> Tile {
         create_area(AreaType::Farm, vec![5, 6]),
     ];
     let idxs: Vec<TileAreaIndex> = fill_area_idxs(&mut areas, offs);
-    
+
     all_areas.append(&mut areas);
     return Tile {
         areas: idxs,
@@ -109,22 +118,43 @@ fn get_fff_frf_frf_fff(all_areas: &mut Vec<TileArea>) -> Tile {
     };
 }
 
-pub fn create_tiles(all_areas: &mut Vec<TileArea>, all_tiles: &mut Vec<Tile>) {
-    for _i in [0..8] {
-        all_tiles.push(get_frf_fff_frf_fff(all_areas));
-    }
-    for _i in [0..9] {
-        all_tiles.push(get_fff_frf_frf_fff(all_areas));
+#[derive(Resource)]
+pub struct GameTileData {
+    pub all_areas: Vec<TileArea>,
+    pub all_tiles: Vec<Tile>,
+}
+
+impl Default for GameTileData {
+    fn default() -> Self {
+        return create_tiles();
     }
 }
 
+pub fn create_tiles() -> GameTileData {
+    let mut game_tiles = GameTileData {
+        all_areas: vec![],
+        all_tiles: vec![],
+    };
+    for _i in [0..8] {
+        game_tiles
+            .all_tiles
+            .push(get_frf_fff_frf_fff(&mut game_tiles.all_areas));
+    }
+    for _i in [0..9] {
+        game_tiles
+            .all_tiles
+            .push(get_fff_frf_frf_fff(&mut game_tiles.all_areas));
+    }
+    return game_tiles;
+}
+
 pub struct Player {
-    team: TeamColor,
-    meeples: Vec<MeepleIndex>,
-    points: i32,
+    pub team: TeamColor,
+    pub meeples: Vec<MeepleIndex>,
+    pub points: i32,
 }
 
 // All areas connected across tiles.
 pub struct MegaArea {
-    connected_areas: Vec<TileAreaIndex>,
+    pub connected_areas: Vec<TileAreaIndex>,
 }
