@@ -1,6 +1,7 @@
 use bevy::prelude::Resource;
 
 #[derive(Copy, Clone)]
+#[derive(Debug)]
 pub enum AreaType {
     Unspecified,
     Farm,
@@ -13,6 +14,7 @@ pub enum AreaType {
 }
 
 #[derive(Copy, Clone)]
+#[derive(Debug)]
 pub enum TileType {
     Unspecified,
     FRF_FFF_FRF_FFF,
@@ -33,12 +35,14 @@ pub type TileAreaIndex = usize;
 pub type MeepleIndex = usize;
 pub type TileIndex = usize;
 
+#[derive(Debug)]
+#[derive(Clone)]
 pub struct TileArea {
-    area_type: AreaType,
-    self_idx: TileAreaIndex,
-    edges: Vec<EdgeNumber>,
+    pub area_type: AreaType,
+    pub self_idx: TileAreaIndex,
+    pub edges: Vec<EdgeNumber>,
     // To areas in same tile, only used for meadow-city interactions.
-    connected_areas: Vec<TileAreaIndex>,
+    pub connected_areas: Vec<TileAreaIndex>,
 }
 
 fn create_area(area_type: AreaType, edges: Vec<EdgeNumber>) -> TileArea {
@@ -50,13 +54,12 @@ fn create_area(area_type: AreaType, edges: Vec<EdgeNumber>) -> TileArea {
     };
 }
 
-fn fill_area_idxs(areas: &mut Vec<TileArea>, offset: TileAreaIndex) -> Vec<TileAreaIndex> {
-    let mut i: TileAreaIndex = 0;
+fn fill_area_idxs(areas: &mut Vec<TileArea>, mut offset: TileAreaIndex) -> Vec<TileAreaIndex> {
     let mut idxs: Vec<TileAreaIndex> = vec![];
     for area in areas {
-        area.self_idx = offset + i;
-        idxs.push(offset + i);
-        i += 1;
+        area.self_idx = offset;
+        idxs.push(offset);
+        offset += 1;
     }
     return idxs;
 }
@@ -76,6 +79,8 @@ fn make_tile_area_connections(
     }
 }
 
+#[derive(Debug)]
+#[derive(Clone)]
 pub struct Tile {
     pub areas: Vec<TileAreaIndex>,
     pub tile_type: TileType,
@@ -119,6 +124,8 @@ fn get_fff_frf_frf_fff(all_areas: &mut Vec<TileArea>) -> Tile {
 }
 
 #[derive(Resource)]
+#[derive(Clone)]
+#[derive(Debug)]
 pub struct GameTileData {
     pub all_areas: Vec<TileArea>,
     pub all_tiles: Vec<Tile>,
@@ -135,12 +142,12 @@ pub fn create_tiles() -> GameTileData {
         all_areas: vec![],
         all_tiles: vec![],
     };
-    for _i in [0..8] {
+    for _i in 0..8 {
         game_tiles
             .all_tiles
             .push(get_frf_fff_frf_fff(&mut game_tiles.all_areas));
     }
-    for _i in [0..9] {
+    for _i in 0..9 {
         game_tiles
             .all_tiles
             .push(get_fff_frf_frf_fff(&mut game_tiles.all_areas));
