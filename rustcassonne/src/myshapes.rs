@@ -100,9 +100,6 @@ impl From<RightTriangleAndTrapezoid> for Mesh {
     }
 }
 
-
-
-
 /// A trapezoid on the `XY` plane centered at the small right angle corner.
 #[derive(Debug, Copy, Clone)]
 pub struct Trapezoid {
@@ -137,6 +134,121 @@ impl From<Trapezoid> for Mesh {
         ];
 
         let indices = Indices::U32(vec![0, 1, 2, 2, 1, 3]);
+
+        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        mesh.set_indices(Some(indices));
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_NORMAL,
+            vec![[0.0, 0.0, 1.0]; vertices.len()],
+        );
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0, 0.0]; vertices.len()]);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
+        return mesh;
+    }
+}
+
+/// SquareWithTrangleChunk, centered at square center
+#[derive(Debug, Copy, Clone)]
+pub struct SquareWithTrangleChunk {
+    /// Length of square. Chunk height is 1/4 of this.
+    pub side_length: f32,
+}
+
+impl Default for SquareWithTrangleChunk {
+    fn default() -> Self {
+        SquareWithTrangleChunk::new(1.0)
+    }
+}
+
+impl SquareWithTrangleChunk {
+    pub fn new(side_width: f32) -> Self {
+        Self {
+            side_length: side_width,
+        }
+    }
+}
+
+impl From<SquareWithTrangleChunk> for Mesh {
+    fn from(square_with_chunk: SquareWithTrangleChunk) -> Self {
+        let vertices = vec![
+            [
+                -square_with_chunk.side_length / 2.0,
+                square_with_chunk.side_length / 2.0,
+                0.0,
+            ],
+            [
+                square_with_chunk.side_length / 2.0,
+                square_with_chunk.side_length / 2.0,
+                0.0,
+            ],
+            [
+                -square_with_chunk.side_length / 2.0,
+                -square_with_chunk.side_length / 2.0,
+                0.0,
+            ],
+            [
+                square_with_chunk.side_length / 2.0,
+                -square_with_chunk.side_length / 2.0,
+                0.0,
+            ],
+            [0.0, square_with_chunk.side_length / 4.0, 0.0],
+        ];
+
+        let indices = Indices::U32(vec![0, 4, 2, 4, 2, 3, 1, 3, 4]);
+
+        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        mesh.set_indices(Some(indices));
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_NORMAL,
+            vec![[0.0, 0.0, 1.0]; vertices.len()],
+        );
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0, 0.0]; vertices.len()]);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
+        return mesh;
+    }
+}
+
+
+
+
+/// SquashedTriangle, centered at hypotenuse right angles to vertex of obtuse angle
+#[derive(Debug, Copy, Clone)]
+pub struct SquashedTriangle {
+    /// Length of triangle hypotenuse. Height is 1/4 of this.
+    pub side_length: f32,
+}
+
+impl Default for SquashedTriangle {
+    fn default() -> Self {
+        SquashedTriangle::new(1.0)
+    }
+}
+
+impl SquashedTriangle {
+    pub fn new(side_width: f32) -> Self {
+        Self {
+            side_length: side_width,
+        }
+    }
+}
+
+impl From<SquashedTriangle> for Mesh {
+    fn from(square_with_chunk: SquashedTriangle) -> Self {
+        let vertices = vec![
+            [
+                -square_with_chunk.side_length / 2.0,
+                0.0,
+                0.0,
+            ],
+            [
+                square_with_chunk.side_length / 2.0,
+                0.0,
+                0.0,
+            ],
+            [0.0, square_with_chunk.side_length / 4.0, 0.0],
+        ];
+
+        let indices = Indices::U32(vec![0, 2, 1]);
 
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
         mesh.set_indices(Some(indices));

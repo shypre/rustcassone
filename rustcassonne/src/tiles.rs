@@ -1,7 +1,6 @@
 use bevy::prelude::Resource;
 
-#[derive(Copy, Clone)]
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum AreaType {
     Unspecified,
     Farm,
@@ -13,12 +12,53 @@ pub enum AreaType {
     Water,
 }
 
-#[derive(Copy, Clone)]
-#[derive(Debug)]
+// Starting from right edge. Each group after first 4 letters is connected
+// road or town edges, and last optional groups is if cloister is present.
+// https://en.wikipedia.org/wiki/Carcassonne_(board_game)#Tiles
+#[derive(Copy, Clone, Debug)]
 pub enum TileType {
     Unspecified,
-    FRF_FFF_FRF_FFF,
-    FFF_FRF_FRF_FFF,
+    // base game
+    RFRF_02,
+    FRRF_12,
+    RRRF,
+    RRRR,
+    FFFF_C,
+    FRFF_C,
+    //
+    FFFT,
+    RFRT_02,
+    RRFT_01,
+    FRRT_12,
+    RRRT,
+    //
+    FTFT,
+    TFFT,
+    TFTF_02,
+    PFPF_02,
+    TFFT_03,
+    PFFP_03,
+    TRRT_03_12,
+    PRRP_03_12,
+    //
+    TFTT_013,
+    PFPP_013,
+    TRTT_013,
+    PRPP_013,
+    //
+    PPPP_0123,
+    // waters
+    FWFF,
+    WFWF_02,
+    FWWF_12,
+    WRWF_02_C,
+    WRWR_02_13,
+    RWWR_03_12,
+    //
+    WRWT_02,
+    //
+    WTWT_02,
+    TWWT_03,
 }
 
 pub enum TeamColor {
@@ -35,8 +75,7 @@ pub type TileAreaIndex = usize;
 pub type MeepleIndex = usize;
 pub type TileIndex = usize;
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TileArea {
     pub area_type: AreaType,
     pub self_idx: TileAreaIndex,
@@ -55,6 +94,19 @@ fn create_area(area_type: AreaType, edges: Vec<EdgeNumber>) -> TileArea {
 }
 
 fn fill_area_idxs(areas: &mut Vec<TileArea>, mut offset: TileAreaIndex) -> Vec<TileAreaIndex> {
+    let mut all_edges: Vec<EdgeNumber> = vec![];
+    for a in &mut *areas {
+        all_edges.extend(&a.edges);
+    }
+    all_edges.sort();
+    if all_edges != vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] {
+        println!(
+            "all_edges did not contain all edges of tile. areas: {:?}",
+            areas
+        );
+        assert!(false);
+    }
+
     let mut idxs: Vec<TileAreaIndex> = vec![];
     for area in areas {
         area.self_idx = offset;
@@ -79,53 +131,222 @@ fn make_tile_area_connections(
     }
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Tile {
     pub areas: Vec<TileAreaIndex>,
     pub tile_type: TileType,
 }
 
-// Indices start from 0 on right edge top node and go clockwise based on
-// https://en.wikipedia.org/wiki/Carcassonne_(board_game)#Tiles
-
-fn get_frf_fff_frf_fff(all_areas: &mut Vec<TileArea>) -> Tile {
+fn get_tile(tile_type: TileType, all_areas: &mut Vec<TileArea>) -> Tile {
     let offs: TileAreaIndex = all_areas.len();
 
-    let mut areas: Vec<TileArea> = vec![
-        create_area(AreaType::Farm, vec![0, 8, 9, 10, 11]),
-        create_area(AreaType::Road, vec![1, 7]),
-        create_area(AreaType::Farm, vec![2, 3, 4, 5, 6]),
-    ];
+    let mut areas: Vec<TileArea>;
+    match tile_type {
+        TileType::RFRF_02 => {
+            areas = vec![
+                create_area(AreaType::Farm, vec![0, 8, 9, 10, 11]),
+                create_area(AreaType::Road, vec![1, 7]),
+                create_area(AreaType::Farm, vec![2, 3, 4, 5, 6]),
+            ]
+        }
+        TileType::FRRF_12 => {
+            areas = vec![
+                create_area(AreaType::Farm, vec![0, 1, 2, 3, 8, 9, 10, 11]),
+                create_area(AreaType::Road, vec![4, 7]),
+                create_area(AreaType::Farm, vec![5, 6]),
+            ];
+        }
+        //
+        TileType::RRRF => {
+            areas = vec![
+                create_area(AreaType::Farm, vec![0, 8, 9, 10, 11]),
+                create_area(AreaType::EndRoad, vec![1]),
+                create_area(AreaType::Farm, vec![2, 3]),
+                create_area(AreaType::EndRoad, vec![4]),
+                create_area(AreaType::Farm, vec![5, 6]),
+                create_area(AreaType::EndRoad, vec![7]),
+            ];
+        }
+        TileType::RRRR => {
+            areas = vec![
+                create_area(AreaType::Farm, vec![0, 11]),
+                create_area(AreaType::EndRoad, vec![1]),
+                create_area(AreaType::Farm, vec![2, 3]),
+                create_area(AreaType::EndRoad, vec![4]),
+                create_area(AreaType::Farm, vec![5, 6]),
+                create_area(AreaType::EndRoad, vec![7]),
+                create_area(AreaType::Farm, vec![8, 9]),
+                create_area(AreaType::EndRoad, vec![10]),
+            ];
+        }
+        TileType::FFFF_C => {
+            areas = vec![
+                create_area(AreaType::Farm, vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
+                //
+                create_area(AreaType::Cloister, vec![]),
+            ];
+        }
+        TileType::FRFF_C => {
+            areas = vec![
+                create_area(AreaType::Farm, vec![0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11]),
+                create_area(AreaType::Road, vec![4]),
+                //
+                create_area(AreaType::Cloister, vec![]),
+            ];
+        }
+        TileType::FFFT => {
+            areas = vec![
+                create_area(AreaType::Farm, vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                create_area(AreaType::Town, vec![9, 10, 11]),
+            ];
+        }
+        TileType::RFRT_02 => {
+            areas = vec![
+                create_area(AreaType::Farm, vec![0, 8]),
+                create_area(AreaType::Road, vec![1, 7]),
+                create_area(AreaType::Farm, vec![2, 3, 4, 5, 6]),
+                create_area(AreaType::Town, vec![9, 10, 11]),
+            ];
+        }
+        TileType::RRFT_01 => {
+            areas = vec![
+                create_area(AreaType::Farm, vec![0, 5, 6, 7, 8]),
+                create_area(AreaType::Road, vec![1, 4]),
+                create_area(AreaType::Farm, vec![2, 3]),
+                create_area(AreaType::Town, vec![9, 10, 11]),
+            ];
+        }
+        TileType::FRRT_12 => {
+            areas = vec![
+                create_area(AreaType::Farm, vec![0, 1, 2, 3, 8]),
+                create_area(AreaType::Road, vec![4, 7]),
+                create_area(AreaType::Farm, vec![5, 6]),
+                create_area(AreaType::Town, vec![9, 10, 11]),
+            ];
+        }
+        TileType::RRRT => {
+            areas = vec![
+                create_area(AreaType::Farm, vec![0, 8]),
+                create_area(AreaType::EndRoad, vec![1]),
+                create_area(AreaType::Farm, vec![2, 3]),
+                create_area(AreaType::EndRoad, vec![4]),
+                create_area(AreaType::Farm, vec![5, 6]),
+                create_area(AreaType::EndRoad, vec![7]),
+                create_area(AreaType::Town, vec![9, 10, 11]),
+            ];
+        }
+        TileType::FTFT => {
+            areas = vec![
+                create_area(AreaType::Farm, vec![0, 1, 2, 6, 7, 8]),
+                create_area(AreaType::Town, vec![3, 4, 5]),
+                create_area(AreaType::Town, vec![9, 10, 11]),
+            ];
+        }
+        TileType::TFFT => {
+            areas = vec![
+                create_area(AreaType::Town, vec![0, 1, 2]),
+                create_area(AreaType::Farm, vec![3, 4, 5, 6, 7, 8]),
+                create_area(AreaType::Town, vec![9, 10, 11]),
+            ];
+        }
+        TileType::TFTF_02 => {
+            areas = vec![
+                create_area(AreaType::Town, vec![0, 1, 2, 6, 7, 8]),
+                create_area(AreaType::Farm, vec![3, 4, 5]),
+                create_area(AreaType::Farm, vec![9, 10, 11]),
+            ];
+        }
+        TileType::PFPF_02 => {
+            areas = vec![
+                create_area(AreaType::PennantTown, vec![0, 1, 2, 6, 7, 8]),
+                create_area(AreaType::Farm, vec![3, 4, 5]),
+                create_area(AreaType::Farm, vec![9, 10, 11]),
+            ];
+        }
+        TileType::TFFT_03 => {
+            areas = vec![
+                create_area(AreaType::Town, vec![0, 1, 2, 9, 10, 11]),
+                create_area(AreaType::Farm, vec![3, 4, 5, 6, 7, 8]),
+            ];
+        }
+        TileType::PFFP_03 => {
+            areas = vec![
+                create_area(AreaType::PennantTown, vec![0, 1, 2, 9, 10, 11]),
+                create_area(AreaType::Farm, vec![3, 4, 5, 6, 7, 8]),
+            ];
+        }
+        TileType::TRRT_03_12 => {
+            areas = vec![
+                create_area(AreaType::Town, vec![0, 1, 2, 9, 10, 11]),
+                create_area(AreaType::Farm, vec![3, 8]),
+                create_area(AreaType::Road, vec![4, 7]),
+                create_area(AreaType::Farm, vec![5, 6]),
+            ];
+        }
+        TileType::PRRP_03_12 => {
+            areas = vec![
+                create_area(AreaType::PennantTown, vec![0, 1, 2, 9, 10, 11]),
+                create_area(AreaType::Farm, vec![3, 8]),
+                create_area(AreaType::Road, vec![4, 7]),
+                create_area(AreaType::Farm, vec![5, 6]),
+            ];
+        }
+        TileType::TFTT_013 => {
+            areas = vec![
+                create_area(AreaType::Town, vec![0, 1, 2, 6, 7, 8, 9, 10, 11]),
+                create_area(AreaType::Farm, vec![3, 4, 5]),
+            ];
+        }
+        TileType::PFPP_013 => {
+            areas = vec![
+                create_area(AreaType::PennantTown, vec![0, 1, 2, 6, 7, 8, 9, 10, 11]),
+                create_area(AreaType::Farm, vec![3, 4, 5]),
+            ];
+        }
+        TileType::TRTT_013 => {
+            areas = vec![
+                create_area(AreaType::Town, vec![0, 1, 2, 6, 7, 8, 9, 10, 11]),
+                create_area(AreaType::Farm, vec![3]),
+                create_area(AreaType::EndRoad, vec![4]),
+                create_area(AreaType::Farm, vec![5]),
+            ];
+        }
+        TileType::PRPP_013 => {
+            areas = vec![
+                create_area(AreaType::PennantTown, vec![0, 1, 2, 6, 7, 8, 9, 10, 11]),
+                create_area(AreaType::Farm, vec![3]),
+                create_area(AreaType::EndRoad, vec![4]),
+                create_area(AreaType::Farm, vec![5]),
+            ];
+        }
+        TileType::PPPP_0123 => {
+            areas = vec![create_area(
+                AreaType::PennantTown,
+                vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+            )];
+        }
+        //
+        TileType::FWFF => todo!(),
+        TileType::WFWF_02 => todo!(),
+        TileType::FWWF_12 => todo!(),
+        TileType::WRWF_02_C => todo!(),
+        TileType::WRWR_02_13 => todo!(),
+        TileType::RWWR_03_12 => todo!(),
+        TileType::WRWT_02 => todo!(),
+        TileType::WTWT_02 => todo!(),
+        TileType::TWWT_03 => todo!(),
+        TileType::Unspecified => todo!(),
+    }
     let idxs: Vec<TileAreaIndex> = fill_area_idxs(&mut areas, offs);
 
     all_areas.append(&mut areas);
     return Tile {
         areas: idxs,
-        tile_type: TileType::FRF_FFF_FRF_FFF,
+        tile_type,
     };
 }
 
-fn get_fff_frf_frf_fff(all_areas: &mut Vec<TileArea>) -> Tile {
-    let offs: TileAreaIndex = all_areas.len();
-
-    let mut areas: Vec<TileArea> = vec![
-        create_area(AreaType::Farm, vec![0, 1, 2, 3, 8, 9, 10, 11]),
-        create_area(AreaType::Road, vec![4, 7]),
-        create_area(AreaType::Farm, vec![5, 6]),
-    ];
-    let idxs: Vec<TileAreaIndex> = fill_area_idxs(&mut areas, offs);
-
-    all_areas.append(&mut areas);
-    return Tile {
-        areas: idxs,
-        tile_type: TileType::FFF_FRF_FRF_FFF,
-    };
-}
-
-#[derive(Resource)]
-#[derive(Clone)]
-#[derive(Debug)]
+#[derive(Resource, Clone, Debug)]
 pub struct GameTileData {
     pub all_areas: Vec<TileArea>,
     pub all_tiles: Vec<Tile>,
@@ -142,16 +363,42 @@ pub fn create_tiles() -> GameTileData {
         all_areas: vec![],
         all_tiles: vec![],
     };
-    for _i in 0..8 {
-        game_tiles
-            .all_tiles
-            .push(get_frf_fff_frf_fff(&mut game_tiles.all_areas));
+
+    let tiles_and_qty: Vec<(TileType, usize)> = vec![
+        (TileType::RFRF_02, 8),
+        (TileType::FRRF_12, 9),
+        // (TileType::RRRF, 4),
+        // (TileType::RRRR, 1),
+        // (TileType::FFFF_C, 4),
+        // (TileType::FRFF_C, 2),
+        (TileType::FFFT, 5),
+        // (TileType::RFRT_02, 4),
+        // (TileType::RRFT_01, 3),
+        // (TileType::FRRT_12, 3),
+        // (TileType::RRRT, 3),
+        // (TileType::FTFT, 3),
+        // (TileType::TFFT, 2),
+        // (TileType::TFTF_02, 1),
+        // (TileType::PFPF_02, 2),
+        // (TileType::TFFT_03, 3),
+        // (TileType::PFFP_03, 2),
+        // (TileType::TRRT_03_12, 3),
+        // (TileType::PRRP_03_12, 2),
+        // (TileType::TFTT_013, 3),
+        // (TileType::PFPP_013, 1),
+        // (TileType::TRTT_013, 1),
+        // (TileType::PRPP_013, 2),
+        // (TileType::PPPP_0123, 1),
+    ];
+
+    for (tile_type, qty) in tiles_and_qty {
+        for _i in 0..qty {
+            game_tiles
+                .all_tiles
+                .push(get_tile(tile_type, &mut game_tiles.all_areas));
+        }
     }
-    for _i in 0..9 {
-        game_tiles
-            .all_tiles
-            .push(get_fff_frf_frf_fff(&mut game_tiles.all_areas));
-    }
+
     return game_tiles;
 }
 

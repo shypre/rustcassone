@@ -114,7 +114,7 @@ pub fn get_area_type_info(area_type: AreaType) -> AreaTypeRenderInfo {
             z_height: -4.0,
         },
         AreaType::Town => AreaTypeRenderInfo {
-            color: Color::BEIGE,
+            color: Color::rgb(0.44, 0.31, 0.22),
             z_height: -5.0,
         },
         AreaType::PennantTown => AreaTypeRenderInfo {
@@ -263,7 +263,7 @@ pub fn create_areas(
     }
 }
 
-pub fn create_frf_fff_frf_fff() -> Vec<AreaRenderDatas> {
+pub fn create_RFRF_02() -> Vec<AreaRenderDatas> {
     let area_datas: Vec<AreaRenderDatas> = vec![
         AreaRenderDatas {
             mesh: shape::Quad::new(Vec2::new(180., 75.)).into(),
@@ -284,7 +284,7 @@ pub fn create_frf_fff_frf_fff() -> Vec<AreaRenderDatas> {
     return area_datas;
 }
 
-pub fn create_fff_frf_frf_fff() -> Vec<AreaRenderDatas> {
+pub fn create_FRRF_12() -> Vec<AreaRenderDatas> {
     let area_datas: Vec<AreaRenderDatas> = vec![
         AreaRenderDatas {
             mesh: RightTriangleAndTrapezoid::new(180., 75.0).into(),
@@ -300,6 +300,22 @@ pub fn create_fff_frf_frf_fff() -> Vec<AreaRenderDatas> {
             mesh: RightTriangle::new(75.0).into(),
             offset: Vec2::new(-90., -90.),
             rotation: 0.0,
+        },
+    ];
+    return area_datas;
+}
+
+pub fn create_FFFT() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: SquareWithTrangleChunk::new(180.0).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: SquashedTriangle::new(180.0).into(),
+            offset: Vec2::new(0., 90.0),
+            rotation: PI,
         },
     ];
     return area_datas;
@@ -325,8 +341,39 @@ pub fn create_tile(
 
     match tile_type {
         TileType::Unspecified => todo!(),
-        TileType::FRF_FFF_FRF_FFF => area_data = create_frf_fff_frf_fff(),
-        TileType::FFF_FRF_FRF_FFF => area_data = create_fff_frf_frf_fff(),
+        TileType::RFRF_02 => area_data = create_RFRF_02(),
+        TileType::FRRF_12 => area_data = create_FRRF_12(),
+        TileType::RRRF => todo!(),
+        TileType::RRRR => todo!(),
+        TileType::FFFF_C => todo!(),
+        TileType::FRFF_C => todo!(),
+        TileType::FFFT => area_data = create_FFFT(),
+        TileType::RFRT_02 => todo!(),
+        TileType::RRFT_01 => todo!(),
+        TileType::FRRT_12 => todo!(),
+        TileType::RRRT => todo!(),
+        TileType::FTFT => todo!(),
+        TileType::TFFT => todo!(),
+        TileType::TFTF_02 => todo!(),
+        TileType::PFPF_02 => todo!(),
+        TileType::TFFT_03 => todo!(),
+        TileType::PFFP_03 => todo!(),
+        TileType::TRRT_03_12 => todo!(),
+        TileType::PRRP_03_12 => todo!(),
+        TileType::TFTT_013 => todo!(),
+        TileType::PFPP_013 => todo!(),
+        TileType::TRTT_013 => todo!(),
+        TileType::PRPP_013 => todo!(),
+        TileType::PPPP_0123 => todo!(),
+        TileType::FWFF => todo!(),
+        TileType::WFWF_02 => todo!(),
+        TileType::FWWF_12 => todo!(),
+        TileType::WRWF_02_C => todo!(),
+        TileType::WRWR_02_13 => todo!(),
+        TileType::RWWR_03_12 => todo!(),
+        TileType::WRWT_02 => todo!(),
+        TileType::WTWT_02 => todo!(),
+        TileType::TWWT_03 => todo!(),
     }
 
     create_areas(
