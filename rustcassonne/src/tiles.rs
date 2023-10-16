@@ -6,6 +6,7 @@ pub enum AreaType {
     Farm,
     Road,
     EndRoad,
+    RoadStopMarker,
     Town,
     PennantTown,
     Cloister,
@@ -165,6 +166,7 @@ fn get_tile(tile_type: TileType, all_areas: &mut Vec<TileArea>) -> Tile {
                 create_area(AreaType::EndRoad, vec![4]),
                 create_area(AreaType::Farm, vec![5, 6]),
                 create_area(AreaType::EndRoad, vec![7]),
+                create_area(AreaType::RoadStopMarker, vec![]),
             ];
         }
         TileType::RRRR => {
@@ -177,6 +179,7 @@ fn get_tile(tile_type: TileType, all_areas: &mut Vec<TileArea>) -> Tile {
                 create_area(AreaType::EndRoad, vec![7]),
                 create_area(AreaType::Farm, vec![8, 9]),
                 create_area(AreaType::EndRoad, vec![10]),
+                create_area(AreaType::RoadStopMarker, vec![]),
             ];
         }
         TileType::FFFF_C => {
@@ -189,7 +192,7 @@ fn get_tile(tile_type: TileType, all_areas: &mut Vec<TileArea>) -> Tile {
         TileType::FRFF_C => {
             areas = vec![
                 create_area(AreaType::Farm, vec![0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11]),
-                create_area(AreaType::Road, vec![4]),
+                create_area(AreaType::EndRoad, vec![4]),
                 //
                 create_area(AreaType::Cloister, vec![]),
             ];
@@ -233,6 +236,7 @@ fn get_tile(tile_type: TileType, all_areas: &mut Vec<TileArea>) -> Tile {
                 create_area(AreaType::Farm, vec![5, 6]),
                 create_area(AreaType::EndRoad, vec![7]),
                 create_area(AreaType::Town, vec![9, 10, 11]),
+                create_area(AreaType::RoadStopMarker, vec![]),
             ];
         }
         TileType::FTFT => {
@@ -365,17 +369,17 @@ pub fn create_tiles() -> GameTileData {
     };
 
     let tiles_and_qty: Vec<(TileType, usize)> = vec![
-        (TileType::RFRF_02, 8),
-        (TileType::FRRF_12, 9),
+        // (TileType::RFRF_02, 8),
+        // (TileType::FRRF_12, 9),
         // (TileType::RRRF, 4),
         // (TileType::RRRR, 1),
         // (TileType::FFFF_C, 4),
         // (TileType::FRFF_C, 2),
-        (TileType::FFFT, 5),
+        // (TileType::FFFT, 5),
         // (TileType::RFRT_02, 4),
         // (TileType::RRFT_01, 3),
         // (TileType::FRRT_12, 3),
-        // (TileType::RRRT, 3),
+        (TileType::RRRT, 3),
         // (TileType::FTFT, 3),
         // (TileType::TFFT, 2),
         // (TileType::TFTF_02, 1),

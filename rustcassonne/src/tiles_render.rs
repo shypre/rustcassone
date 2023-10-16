@@ -101,33 +101,37 @@ pub fn get_area_type_info(area_type: AreaType) -> AreaTypeRenderInfo {
             color: Color::ORANGE,
             z_height: -1.0,
         },
-        AreaType::Farm => AreaTypeRenderInfo {
-            color: Color::SEA_GREEN,
+        AreaType::Cloister => AreaTypeRenderInfo {
+            color: Color::CRIMSON,
             z_height: -2.0,
-        },
-        AreaType::Road => AreaTypeRenderInfo {
-            color: Color::WHITE,
-            z_height: -3.0,
-        },
-        AreaType::EndRoad => AreaTypeRenderInfo {
-            color: Color::ANTIQUE_WHITE,
-            z_height: -4.0,
-        },
-        AreaType::Town => AreaTypeRenderInfo {
-            color: Color::rgb(0.44, 0.31, 0.22),
-            z_height: -5.0,
         },
         AreaType::PennantTown => AreaTypeRenderInfo {
             color: Color::GOLD,
+            z_height: -3.0,
+        },
+        AreaType::Town => AreaTypeRenderInfo {
+            color: Color::rgb(0.44, 0.31, 0.22),
+            z_height: -4.0,
+        },
+        AreaType::RoadStopMarker => AreaTypeRenderInfo {
+            color: Color::GRAY,
+            z_height: -5.0,
+        },
+        AreaType::EndRoad => AreaTypeRenderInfo {
+            color: Color::ANTIQUE_WHITE,
             z_height: -6.0,
         },
-        AreaType::Cloister => AreaTypeRenderInfo {
-            color: Color::CRIMSON,
+        AreaType::Road => AreaTypeRenderInfo {
+            color: Color::WHITE,
             z_height: -7.0,
+        },
+        AreaType::Farm => AreaTypeRenderInfo {
+            color: Color::SEA_GREEN,
+            z_height: -8.0,
         },
         AreaType::Water => AreaTypeRenderInfo {
             color: Color::BLUE,
-            z_height: -8.0,
+            z_height: -9.0,
         },
     }
 }
@@ -305,6 +309,135 @@ pub fn create_FRRF_12() -> Vec<AreaRenderDatas> {
     return area_datas;
 }
 
+pub fn create_RRRF() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(180., 75.)).into(),
+            offset: Vec2::new(0., 52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(75., 30.)).into(),
+            offset: Vec2::new(52.5, 0.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(75., 75.)).into(),
+            offset: Vec2::new(52.5, -52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(30., 75.)).into(),
+            offset: Vec2::new(0., -52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(75., 75.)).into(),
+            offset: Vec2::new(-52.5, -52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(75., 30.)).into(),
+            offset: Vec2::new(-52.5, 0.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(30., 30.)).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+    ];
+    return area_datas;
+}
+
+pub fn create_RRRR() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(75., 75.)).into(),
+            offset: Vec2::new(52.5, 52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(75., 30.)).into(),
+            offset: Vec2::new(52.5, 0.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(75., 75.)).into(),
+            offset: Vec2::new(52.5, -52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(30., 75.)).into(),
+            offset: Vec2::new(0., -52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(75., 75.)).into(),
+            offset: Vec2::new(-52.5, -52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(75., 30.)).into(),
+            offset: Vec2::new(-52.5, 0.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(75., 75.)).into(),
+            offset: Vec2::new(-52.5, 52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(30., 75.)).into(),
+            offset: Vec2::new(0., 52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(30., 30.)).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+    ];
+    return area_datas;
+}
+
+pub fn create_FFFF_C() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(180., 180.)).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(45., 45.)).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+    ];
+    return area_datas;
+}
+
+pub fn create_FRFF_C() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(180., 180.)).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(30., 67.5)).into(),
+            offset: Vec2::new(0., -56.25),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(45., 45.)).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+    ];
+    return area_datas;
+}
+
 pub fn create_FFFT() -> Vec<AreaRenderDatas> {
     let area_datas: Vec<AreaRenderDatas> = vec![
         AreaRenderDatas {
@@ -316,6 +449,130 @@ pub fn create_FFFT() -> Vec<AreaRenderDatas> {
             mesh: SquashedTriangle::new(180.0).into(),
             offset: Vec2::new(0., 90.0),
             rotation: PI,
+        },
+    ];
+    return area_datas;
+}
+
+pub fn create_RFRT_02() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(180., 75.)).into(),
+            offset: Vec2::new(0., 52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(180., 30.)).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(180., 75.)).into(),
+            offset: Vec2::new(0., -52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: SquashedTriangle::new(180.0).into(),
+            offset: Vec2::new(0., 90.0),
+            rotation: PI,
+        },
+    ];
+    return area_datas;
+}
+
+pub fn create_RRFT_01() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: RightTriangleAndTrapezoid::new(180., 75.0).into(),
+            offset: Vec2::new(-90., 90.),
+            rotation: 3.0 * PI / 2.0,
+        },
+        AreaRenderDatas {
+            mesh: Trapezoid::new(105.0, 30.0).into(),
+            offset: Vec2::new(90., -90.),
+            rotation: PI / 2.0,
+        },
+        AreaRenderDatas {
+            mesh: RightTriangle::new(75.0).into(),
+            offset: Vec2::new(90., -90.),
+            rotation: PI / 2.0,
+        },
+        AreaRenderDatas {
+            mesh: SquashedTriangle::new(180.0).into(),
+            offset: Vec2::new(0., 90.0),
+            rotation: PI,
+        },
+    ];
+    return area_datas;
+}
+
+pub fn create_FRRT_12() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: RightTriangleAndTrapezoid::new(180., 75.0).into(),
+            offset: Vec2::new(90., 90.),
+            rotation: PI,
+        },
+        AreaRenderDatas {
+            mesh: Trapezoid::new(105.0, 30.0).into(),
+            offset: Vec2::new(-90., -90.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: RightTriangle::new(75.0).into(),
+            offset: Vec2::new(-90., -90.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: SquashedTriangle::new(180.0).into(),
+            offset: Vec2::new(0., 90.0),
+            rotation: PI,
+        },
+    ];
+    return area_datas;
+}
+
+pub fn create_RRRT() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(180., 75.)).into(),
+            offset: Vec2::new(0., 52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(75., 30.)).into(),
+            offset: Vec2::new(52.5, 0.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(75., 75.)).into(),
+            offset: Vec2::new(52.5, -52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(30., 75.)).into(),
+            offset: Vec2::new(0., -52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(75., 75.)).into(),
+            offset: Vec2::new(-52.5, -52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(75., 30.)).into(),
+            offset: Vec2::new(-52.5, 0.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: SquashedTriangle::new(180.0).into(),
+            offset: Vec2::new(0., 90.0),
+            rotation: PI,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(30., 30.)).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
         },
     ];
     return area_datas;
@@ -343,15 +600,15 @@ pub fn create_tile(
         TileType::Unspecified => todo!(),
         TileType::RFRF_02 => area_data = create_RFRF_02(),
         TileType::FRRF_12 => area_data = create_FRRF_12(),
-        TileType::RRRF => todo!(),
-        TileType::RRRR => todo!(),
-        TileType::FFFF_C => todo!(),
-        TileType::FRFF_C => todo!(),
+        TileType::RRRF => area_data = create_RRRF(),
+        TileType::RRRR => area_data = create_RRRR(),
+        TileType::FFFF_C => area_data = create_FFFF_C(),
+        TileType::FRFF_C => area_data = create_FRFF_C(),
         TileType::FFFT => area_data = create_FFFT(),
-        TileType::RFRT_02 => todo!(),
-        TileType::RRFT_01 => todo!(),
-        TileType::FRRT_12 => todo!(),
-        TileType::RRRT => todo!(),
+        TileType::RFRT_02 => area_data = create_RFRT_02(),
+        TileType::RRFT_01 => area_data = create_RRFT_01(),
+        TileType::FRRT_12 => area_data = create_FRRT_12(),
+        TileType::RRRT => area_data = create_RRRT(),
         TileType::FTFT => todo!(),
         TileType::TFFT => todo!(),
         TileType::TFTF_02 => todo!(),
