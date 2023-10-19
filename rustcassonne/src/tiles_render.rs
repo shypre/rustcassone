@@ -578,6 +578,80 @@ pub fn create_RRRT() -> Vec<AreaRenderDatas> {
     return area_datas;
 }
 
+pub fn create_FTFT() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: SquareWithTrangleChunk::new(180.0).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: SquashedTriangle::new(180.0).into(),
+            offset: Vec2::new(0., -90.0),
+            rotation: 0.,
+        },
+        AreaRenderDatas {
+            mesh: SquashedTriangle::new(180.0).into(),
+            offset: Vec2::new(0., 90.0),
+            rotation: PI,
+        },
+    ];
+    return area_datas;
+}
+
+pub fn create_TFFT() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: SquashedTriangle::new(180.0).into(),
+            offset: Vec2::new(90., 0.),
+            rotation: PI / 2.0,
+        },
+        AreaRenderDatas {
+            mesh: SquareWithTrangleChunk::new(180.0).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: SquashedTriangle::new(180.0).into(),
+            offset: Vec2::new(0., 90.0),
+            rotation: PI,
+        },
+    ];
+    return area_datas;
+}
+
+pub fn create_TFTF_02() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+    ];
+    return area_datas;
+}
+
+pub fn create_PFPF_02() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+    ];
+    return area_datas;
+}
+
+pub fn create_TFFT_03() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: RightTriangle::new(180.0).into(),
+            offset: Vec2::new(90., 90.0),
+            rotation: PI,
+        },
+        AreaRenderDatas {
+            mesh: RightTriangle::new(180.0).into(),
+            offset: Vec2::new(-90., -90.0),
+            rotation: 0.,
+        },
+    ];
+    return area_datas;
+}
+
+pub fn create_PFFP_03() -> Vec<AreaRenderDatas> {
+    return create_TFFT_03();
+}
+
 pub fn create_tile(
     tile_idx: TileIndex,
     window: &Window,
@@ -609,12 +683,12 @@ pub fn create_tile(
         TileType::RRFT_01 => area_data = create_RRFT_01(),
         TileType::FRRT_12 => area_data = create_FRRT_12(),
         TileType::RRRT => area_data = create_RRRT(),
-        TileType::FTFT => todo!(),
-        TileType::TFFT => todo!(),
+        TileType::FTFT => area_data = create_FTFT(),
+        TileType::TFFT => area_data = create_TFFT(),
         TileType::TFTF_02 => todo!(),
         TileType::PFPF_02 => todo!(),
-        TileType::TFFT_03 => todo!(),
-        TileType::PFFP_03 => todo!(),
+        TileType::TFFT_03 => area_data = create_TFFT_03(),
+        TileType::PFFP_03 => area_data = create_PFFP_03(),
         TileType::TRRT_03_12 => todo!(),
         TileType::PRRP_03_12 => todo!(),
         TileType::TFTT_013 => todo!(),
