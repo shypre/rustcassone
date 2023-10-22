@@ -209,6 +209,68 @@ impl From<SquareWithTrangleChunk> for Mesh {
 }
 
 
+/// SquareWithTwoTrangleChunks, centered at square center
+#[derive(Debug, Copy, Clone)]
+pub struct SquareWithTwoTrangleChunks {
+    /// Length of square. Chunk height is 1/4 of this.
+    pub side_length: f32,
+}
+
+impl Default for SquareWithTwoTrangleChunks {
+    fn default() -> Self {
+        SquareWithTwoTrangleChunks::new(1.0)
+    }
+}
+
+impl SquareWithTwoTrangleChunks {
+    pub fn new(side_width: f32) -> Self {
+        Self {
+            side_length: side_width,
+        }
+    }
+}
+
+impl From<SquareWithTwoTrangleChunks> for Mesh {
+    fn from(square_two_chunks: SquareWithTwoTrangleChunks) -> Self {
+        let vertices = vec![
+            [
+                -square_two_chunks.side_length / 2.0,
+                square_two_chunks.side_length / 2.0,
+                0.0,
+            ],
+            [
+                square_two_chunks.side_length / 2.0,
+                square_two_chunks.side_length / 2.0,
+                0.0,
+            ],
+            [
+                -square_two_chunks.side_length / 2.0,
+                -square_two_chunks.side_length / 2.0,
+                0.0,
+            ],
+            [
+                square_two_chunks.side_length / 2.0,
+                -square_two_chunks.side_length / 2.0,
+                0.0,
+            ],
+            [0.0, square_two_chunks.side_length / 4.0, 0.0],
+            [0.0, -square_two_chunks.side_length / 4.0, 0.0],
+        ];
+
+        let indices = Indices::U32(vec![0, 4, 5, 0, 5, 2, 1, 5, 4, 1, 3, 5]);
+
+        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        mesh.set_indices(Some(indices));
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_NORMAL,
+            vec![[0.0, 0.0, 1.0]; vertices.len()],
+        );
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0, 0.0]; vertices.len()]);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
+        return mesh;
+    }
+}
+
 
 
 /// SquashedTriangle, centered at hypotenuse right angles to vertex of obtuse angle

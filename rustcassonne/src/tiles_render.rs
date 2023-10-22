@@ -267,6 +267,43 @@ pub fn create_areas(
     }
 }
 
+pub fn create_FFFF_C() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(180., 180.)).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(45., 45.)).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+    ];
+    return area_datas;
+}
+
+pub fn create_FRFF_C() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(180., 180.)).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(30., 67.5)).into(),
+            offset: Vec2::new(0., -56.25),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(45., 45.)).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+    ];
+    return area_datas;
+}
+
 pub fn create_RFRF_02() -> Vec<AreaRenderDatas> {
     let area_datas: Vec<AreaRenderDatas> = vec![
         AreaRenderDatas {
@@ -394,43 +431,6 @@ pub fn create_RRRR() -> Vec<AreaRenderDatas> {
         },
         AreaRenderDatas {
             mesh: shape::Quad::new(Vec2::new(30., 30.)).into(),
-            offset: Vec2::new(0., 0.),
-            rotation: 0.0,
-        },
-    ];
-    return area_datas;
-}
-
-pub fn create_FFFF_C() -> Vec<AreaRenderDatas> {
-    let area_datas: Vec<AreaRenderDatas> = vec![
-        AreaRenderDatas {
-            mesh: shape::Quad::new(Vec2::new(180., 180.)).into(),
-            offset: Vec2::new(0., 0.),
-            rotation: 0.0,
-        },
-        AreaRenderDatas {
-            mesh: shape::Quad::new(Vec2::new(45., 45.)).into(),
-            offset: Vec2::new(0., 0.),
-            rotation: 0.0,
-        },
-    ];
-    return area_datas;
-}
-
-pub fn create_FRFF_C() -> Vec<AreaRenderDatas> {
-    let area_datas: Vec<AreaRenderDatas> = vec![
-        AreaRenderDatas {
-            mesh: shape::Quad::new(Vec2::new(180., 180.)).into(),
-            offset: Vec2::new(0., 0.),
-            rotation: 0.0,
-        },
-        AreaRenderDatas {
-            mesh: shape::Quad::new(Vec2::new(30., 67.5)).into(),
-            offset: Vec2::new(0., -56.25),
-            rotation: 0.0,
-        },
-        AreaRenderDatas {
-            mesh: shape::Quad::new(Vec2::new(45., 45.)).into(),
             offset: Vec2::new(0., 0.),
             rotation: 0.0,
         },
@@ -581,7 +581,7 @@ pub fn create_RRRT() -> Vec<AreaRenderDatas> {
 pub fn create_FTFT() -> Vec<AreaRenderDatas> {
     let area_datas: Vec<AreaRenderDatas> = vec![
         AreaRenderDatas {
-            mesh: SquareWithTrangleChunk::new(180.0).into(),
+            mesh: SquareWithTwoTrangleChunks::new(180.0).into(),
             offset: Vec2::new(0., 0.),
             rotation: 0.0,
         },
@@ -602,6 +602,7 @@ pub fn create_FTFT() -> Vec<AreaRenderDatas> {
 pub fn create_TFFT() -> Vec<AreaRenderDatas> {
     let area_datas: Vec<AreaRenderDatas> = vec![
         AreaRenderDatas {
+            // TODO: square for consistency
             mesh: SquashedTriangle::new(180.0).into(),
             offset: Vec2::new(90., 0.),
             rotation: PI / 2.0,
@@ -622,14 +623,27 @@ pub fn create_TFFT() -> Vec<AreaRenderDatas> {
 
 pub fn create_TFTF_02() -> Vec<AreaRenderDatas> {
     let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: SquareWithTwoTrangleChunks::new(180.0).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: SquashedTriangle::new(180.0).into(),
+            offset: Vec2::new(0., -90.0),
+            rotation: 0.,
+        },
+        AreaRenderDatas {
+            mesh: SquashedTriangle::new(180.0).into(),
+            offset: Vec2::new(0., 90.0),
+            rotation: PI,
+        },
     ];
     return area_datas;
 }
 
 pub fn create_PFPF_02() -> Vec<AreaRenderDatas> {
-    let area_datas: Vec<AreaRenderDatas> = vec![
-    ];
-    return area_datas;
+    return create_TFTF_02();
 }
 
 pub fn create_TFFT_03() -> Vec<AreaRenderDatas> {
@@ -650,6 +664,36 @@ pub fn create_TFFT_03() -> Vec<AreaRenderDatas> {
 
 pub fn create_PFFP_03() -> Vec<AreaRenderDatas> {
     return create_TFFT_03();
+}
+
+pub fn create_TRRT_03_12() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: RightTriangle::new(180.0).into(),
+            offset: Vec2::new(90., 90.0),
+            rotation: PI,
+        },
+        AreaRenderDatas {
+            mesh: Trapezoid::new(180.0, 75.0).into(),
+            offset: Vec2::new(-90., -90.0),
+            rotation: 0.,
+        },
+        AreaRenderDatas {
+            mesh: Trapezoid::new(105.0, 30.0).into(),
+            offset: Vec2::new(-90., -90.0),
+            rotation: 0.,
+        },
+        AreaRenderDatas {
+            mesh: RightTriangle::new(75.0).into(),
+            offset: Vec2::new(-90., -90.0),
+            rotation: 0.,
+        },
+    ];
+    return area_datas;
+}
+
+pub fn create_PRRP_03_12() -> Vec<AreaRenderDatas> {
+    return create_TRRT_03_12();
 }
 
 pub fn create_tile(
@@ -685,12 +729,12 @@ pub fn create_tile(
         TileType::RRRT => area_data = create_RRRT(),
         TileType::FTFT => area_data = create_FTFT(),
         TileType::TFFT => area_data = create_TFFT(),
-        TileType::TFTF_02 => todo!(),
-        TileType::PFPF_02 => todo!(),
+        TileType::TFTF_02 => area_data = create_TFTF_02(),
+        TileType::PFPF_02 => area_data = create_PFPF_02(),
         TileType::TFFT_03 => area_data = create_TFFT_03(),
         TileType::PFFP_03 => area_data = create_PFFP_03(),
-        TileType::TRRT_03_12 => todo!(),
-        TileType::PRRP_03_12 => todo!(),
+        TileType::TRRT_03_12 => area_data = create_TRRT_03_12(),
+        TileType::PRRP_03_12 => area_data = create_PRRP_03_12(),
         TileType::TFTT_013 => todo!(),
         TileType::PFPP_013 => todo!(),
         TileType::TRTT_013 => todo!(),
