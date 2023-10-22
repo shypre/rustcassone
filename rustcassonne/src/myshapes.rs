@@ -3,7 +3,65 @@ use bevy::{
     render::{mesh::Indices, render_resource::PrimitiveTopology},
 };
 
-/// A right triangle on the `XY` plane centered at the right angle corner.
+/// A right triangle on the `XY` plane centered at the right angle corner. If not flipped, right angle is pointing down and left, otherwise down and right.
+#[derive(Debug, Copy, Clone)]
+pub struct RightScaleneTriangle {
+    /// Length of each right angle side.
+    pub side_length_1: f32,
+    pub side_length_2: f32,
+    pub flipped: bool,
+}
+
+impl Default for RightScaleneTriangle {
+    fn default() -> Self {
+        RightScaleneTriangle::new(1.0, 1.0, false)
+    }
+}
+
+impl RightScaleneTriangle {
+    pub fn new(side_length_1: f32, side_length_2: f32, flipped: bool) -> Self {
+        Self {
+            side_length_1,
+            side_length_2,
+            flipped,
+        }
+    }
+}
+
+impl From<RightScaleneTriangle> for Mesh {
+    fn from(right_triangle: RightScaleneTriangle) -> Self {
+        let vertices: Vec<[f32; 3]>;
+        let indices: Indices;
+
+        if right_triangle.flipped {
+            vertices = vec![
+                [0.0, 0.0, 0.0],
+                [0.0, right_triangle.side_length_1, 0.0],
+                [-right_triangle.side_length_2, 0.0, 0.0],
+            ];
+            indices = Indices::U32(vec![0, 2, 1]);
+        } else {
+            vertices = vec![
+                [0.0, 0.0, 0.0],
+                [0.0, right_triangle.side_length_1, 0.0],
+                [right_triangle.side_length_2, 0.0, 0.0],
+            ];
+            indices = Indices::U32(vec![0, 1, 2]);
+        }
+
+        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        mesh.set_indices(Some(indices));
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_NORMAL,
+            vec![[0.0, 0.0, 1.0]; vertices.len()],
+        );
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0, 0.0]; vertices.len()]);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
+        return mesh;
+    }
+}
+
+/// A right triangle on the `XY` plane centered at the right angle corner, both sides are of equal length.
 #[derive(Debug, Copy, Clone)]
 pub struct RightTriangle {
     /// Length of each right angle side.
@@ -208,7 +266,6 @@ impl From<SquareWithTrangleChunk> for Mesh {
     }
 }
 
-
 /// SquareWithTwoTrangleChunks, centered at square center
 #[derive(Debug, Copy, Clone)]
 pub struct SquareWithTwoTrangleChunks {
@@ -271,8 +328,6 @@ impl From<SquareWithTwoTrangleChunks> for Mesh {
     }
 }
 
-
-
 /// SquashedTriangle, centered at hypotenuse right angles to vertex of obtuse angle
 #[derive(Debug, Copy, Clone)]
 pub struct SquashedTriangle {
@@ -297,16 +352,8 @@ impl SquashedTriangle {
 impl From<SquashedTriangle> for Mesh {
     fn from(square_with_chunk: SquashedTriangle) -> Self {
         let vertices = vec![
-            [
-                -square_with_chunk.side_length / 2.0,
-                0.0,
-                0.0,
-            ],
-            [
-                square_with_chunk.side_length / 2.0,
-                0.0,
-                0.0,
-            ],
+            [-square_with_chunk.side_length / 2.0, 0.0, 0.0],
+            [square_with_chunk.side_length / 2.0, 0.0, 0.0],
             [0.0, square_with_chunk.side_length / 4.0, 0.0],
         ];
 

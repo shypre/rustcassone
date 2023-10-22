@@ -696,6 +696,67 @@ pub fn create_PRRP_03_12() -> Vec<AreaRenderDatas> {
     return create_TRRT_03_12();
 }
 
+pub fn create_TFTT_013() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: SquareWithTrangleChunk::new(180.0).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: PI,
+        },
+        AreaRenderDatas {
+            mesh: SquashedTriangle::new(180.0).into(),
+            offset: Vec2::new(0., -90.0),
+            rotation: 0.,
+        },
+    ];
+    return area_datas;
+}
+
+pub fn create_PFPP_013() -> Vec<AreaRenderDatas> {
+    return create_TFTT_013();
+}
+
+pub fn create_TRTT_013() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: SquareWithTrangleChunk::new(180.0).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: PI,
+        },
+        AreaRenderDatas {
+            mesh: RightScaleneTriangle::new(45.0, 90.0, false).into(),
+            offset: Vec2::new(0., -90.0),
+            rotation: 0.,
+        },
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(30., 75.)).into(),
+            offset: Vec2::new(0., -52.5),
+            rotation: 0.0,
+        },
+        AreaRenderDatas {
+            mesh: RightScaleneTriangle::new(45.0, 90.0, true).into(),
+            offset: Vec2::new(0., -90.0),
+            rotation: 0.,
+        },
+        //
+    ];
+    return area_datas;
+}
+
+pub fn create_PRPP_013() -> Vec<AreaRenderDatas> {
+    return create_TRTT_013();
+}
+pub fn create_PPPP_0123() -> Vec<AreaRenderDatas> {
+    let area_datas: Vec<AreaRenderDatas> = vec![
+        AreaRenderDatas {
+            mesh: shape::Quad::new(Vec2::new(180., 180.)).into(),
+            offset: Vec2::new(0., 0.),
+            rotation: 0.0,
+        },
+    ];
+    return area_datas;
+}
+
 pub fn create_tile(
     tile_idx: TileIndex,
     window: &Window,
@@ -735,11 +796,11 @@ pub fn create_tile(
         TileType::PFFP_03 => area_data = create_PFFP_03(),
         TileType::TRRT_03_12 => area_data = create_TRRT_03_12(),
         TileType::PRRP_03_12 => area_data = create_PRRP_03_12(),
-        TileType::TFTT_013 => todo!(),
-        TileType::PFPP_013 => todo!(),
-        TileType::TRTT_013 => todo!(),
-        TileType::PRPP_013 => todo!(),
-        TileType::PPPP_0123 => todo!(),
+        TileType::TFTT_013 => area_data = create_TFTT_013(),
+        TileType::PFPP_013 => area_data = create_PFPP_013(),
+        TileType::TRTT_013 => area_data = create_TRTT_013(),
+        TileType::PRPP_013 => area_data = create_PRPP_013(),
+        TileType::PPPP_0123 => area_data = create_PPPP_0123(),
         TileType::FWFF => todo!(),
         TileType::WFWF_02 => todo!(),
         TileType::FWWF_12 => todo!(),

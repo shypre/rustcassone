@@ -122,11 +122,11 @@ fn zoom_camera(
     keys: Res<Input<KeyCode>>,
     mut camera_q: Query<&mut OrthographicProjection, (With<Camera>, With<MainCamera>)>,
 ) {
-    if keys.any_pressed([KeyCode::Space]) {
+    if keys.any_pressed([KeyCode::ControlLeft]) {
         if camera_q.single_mut().scale > 0.2 {
             camera_q.single_mut().scale -= 0.01;
         }
-    } else if keys.any_pressed([KeyCode::ControlLeft]) {
+    } else if keys.any_pressed([KeyCode::Space]) {
         if camera_q.single_mut().scale < 3. {
             camera_q.single_mut().scale += 0.01;
         }
@@ -248,15 +248,16 @@ fn setup(
     ));
 
     // TODO: add with proper meeple data
-    let mut x_offset: f32 = 0.0;
-    for color in [Color::DARK_GRAY, Color::CYAN, Color::FUCHSIA] {
-        for _i in 0..3 {
-            let mut transform = Transform::from_translation(Vec3::new(x_offset, 50.0, 15.0));
+    let mut y_offset: f32 = 150.0;
+    for color in [Color::DARK_GRAY, Color::CYAN, Color::FUCHSIA, Color::MAROON, Color::INDIGO] {
+        let mut x_offset: f32 = 300.0;
+        for _i in 0..8 {
+            let mut transform = Transform::from_translation(Vec3::new(x_offset, y_offset, 15.0));
             transform.rotate_z(PI / 4.0);
             commands.spawn((
                 MaterialMesh2dBundle {
                     mesh: meshes
-                        .add(shape::Quad::new(Vec2::new(20., 20.)).into())
+                        .add(shape::Quad::new(Vec2::new(18., 18.)).into())
                         .into(),
                     material: materials.add(ColorMaterial::from(color)),
                     transform: transform,
@@ -275,6 +276,7 @@ fn setup(
 
             x_offset += 40.0;
         }
+        y_offset -= 50.0
     }
 }
 
