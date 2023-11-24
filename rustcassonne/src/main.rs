@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 mod myshapes;
 mod tiles;
 mod tiles_render;
@@ -24,7 +26,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(DefaultPickingPlugins)
         .add_event::<MouseButtonInput>()
-        .add_event::<CubeDragEvent>()
+        .add_event::<GenericDragEvent>()
         .add_event::<TileDragEvent>()
         .add_systems(Startup, (setup))
         .add_systems(
@@ -34,13 +36,13 @@ fn main() {
                 move_camera,
                 zoom_camera,
                 spawn_tile,
-                handle_drag_event.run_if(on_event::<CubeDragEvent>()),
-                handle_tile_area_drag_event.run_if(on_event::<TileDragEvent>()),
+                handle_generic_drag_event.run_if(on_event::<GenericDragEvent>()),
+                handle_tile_drag_event.run_if(on_event::<TileDragEvent>()),
                 rotate_tile,
                 print_tile_data,
+                spawn_placeholder_tile,
             ),
         )
-        // .add_system(spawn_square_on_click)
         .run();
 }
 
@@ -53,43 +55,6 @@ fn mouse_button_events(mut mousebtn_evr: EventReader<MouseButtonInput>) {
             ButtonState::Released => {
                 println!("Mouse button release: {:?}", ev.button);
             }
-        }
-    }
-}
-
-fn spawn_square_on_click(
-    mut mousebtn_evr: EventReader<MouseButtonInput>,
-    window: Query<&Window>,
-    camera_q: Query<(&Camera, &OrthographicProjection, &GlobalTransform), With<MainCamera>>,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
-    use bevy::input::ButtonState;
-
-    for ev in mousebtn_evr.iter() {
-        if ev.state == ButtonState::Pressed && ev.button == MouseButton::Right {
-            let coords =
-                mouse_to_world_position(window.single(), camera_q.single().0, camera_q.single().2);
-
-            commands.spawn((
-                MaterialMesh2dBundle {
-                    mesh: meshes
-                        .add(shape::Quad::new(Vec2::new(50., 50.)).into())
-                        .into(),
-                    material: materials.add(ColorMaterial::from(Color::RED)),
-                    transform: Transform::from_translation(Vec3::new(coords.x, coords.y, 0.)),
-                    ..default()
-                },
-                PickableBundle::default(),    // Makes the entity pickable
-                RaycastPickTarget::default(), // Marker for the `bevy_picking_raycast` backend
-                On::<Pointer<DragStart>>::target_remove::<Pickable>(), // Disable picking
-                On::<Pointer<DragEnd>>::target_insert(Pickable {
-                    should_block_lower: true,
-                    should_emit_events: true,
-                }), // Re-enable picking
-                On::<Pointer<Drag>>::send_event::<CubeDragEvent>(),
-            ));
         }
     }
 }
@@ -170,6 +135,29 @@ fn spawn_tile(
     }
 }
 
+fn spawn_placeholder_tile(
+    keys: Res<Input<KeyCode>>,
+    window: Query<&Window>,
+    mut tile_data: ResMut<GameTileData>,
+    mut gameplay_data: ResMut<GameplayData>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
+) {
+    if keys.just_pressed(KeyCode::Y) {
+        println!("spawn placeholder tile");
+        create_placeholder_tile(
+            window.single(),
+            commands,
+            meshes,
+            materials,
+            camera_q.single().1,
+            camera_q.single().3,
+        );
+    }
+}
+
 fn rotate_tile(
     keys: Res<Input<KeyCode>>,
     window: Query<&Window>,
@@ -217,12 +205,6 @@ pub struct GameplayData {
     pub unspawned_tiles: Vec<TileIndex>,
 }
 
-// impl Default for GameplayData {
-//     fn default() -> Self {
-//         return GameplayData;
-//     }
-// }
-
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -249,10 +231,16 @@ fn setup(
 
     // TODO: add with proper meeple data
     let mut y_offset: f32 = 150.0;
-    for color in [Color::DARK_GRAY, Color::CYAN, Color::FUCHSIA, Color::MAROON, Color::INDIGO] {
+    for color in [
+        Color::DARK_GRAY,
+        Color::CYAN,
+        Color::FUCHSIA,
+        Color::MAROON,
+        Color::INDIGO,
+    ] {
         let mut x_offset: f32 = 300.0;
         for _i in 0..8 {
-            let mut transform = Transform::from_translation(Vec3::new(x_offset, y_offset, 15.0));
+            let mut transform = Transform::from_translation(Vec3::new(x_offset, y_offset, 5.0));
             transform.rotate_z(PI / 4.0);
             commands.spawn((
                 MaterialMesh2dBundle {
@@ -271,7 +259,7 @@ fn setup(
                     should_block_lower: true,
                     should_emit_events: true,
                 }), // Re-enable picking
-                On::<Pointer<Drag>>::send_event::<CubeDragEvent>(),
+                On::<Pointer<Drag>>::send_event::<GenericDragEvent>(),
             ));
 
             x_offset += 40.0;
@@ -293,29 +281,39 @@ fn print_tile_data(
     }
 }
 
-#[derive(Event)]
-pub struct CubeDragEvent(Entity, Vec2);
-
-impl From<ListenerInput<Pointer<Drag>>> for CubeDragEvent {
-    fn from(event: ListenerInput<Pointer<Drag>>) -> Self {
-        CubeDragEvent(event.target, event.delta)
-    }
-}
-
-pub fn handle_drag_event(
-    mut drag_event: EventReader<CubeDragEvent>,
-    mut q: Query<(Entity, &mut Transform)>,
+fn spawn_square_on_click(
+    mut mousebtn_evr: EventReader<MouseButtonInput>,
+    window: Query<&Window>,
     camera_q: Query<(&Camera, &OrthographicProjection, &GlobalTransform), With<MainCamera>>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    for event in drag_event.iter() {
-        let e = event.0;
-        info!("cube {:?} drag_event {:?}", event.0, event.1);
-        if let Ok((_e, mut e_transform)) = q.get_mut(e) {
-            let mut translate = event.1.extend(0.0);
-            // it's now reversed for some reason, didn't used to be.
-            translate.y *= -1.0;
-            e_transform.translation += translate * camera_q.single().1.scale;
-        } else {
+    use bevy::input::ButtonState;
+
+    for ev in mousebtn_evr.iter() {
+        if ev.state == ButtonState::Pressed && ev.button == MouseButton::Right {
+            let coords =
+                mouse_to_world_position(window.single(), camera_q.single().0, camera_q.single().2);
+
+            commands.spawn((
+                MaterialMesh2dBundle {
+                    mesh: meshes
+                        .add(shape::Quad::new(Vec2::new(50., 50.)).into())
+                        .into(),
+                    material: materials.add(ColorMaterial::from(Color::RED)),
+                    transform: Transform::from_translation(Vec3::new(coords.x, coords.y, 0.)),
+                    ..default()
+                },
+                PickableBundle::default(),    // Makes the entity pickable
+                RaycastPickTarget::default(), // Marker for the `bevy_picking_raycast` backend
+                On::<Pointer<DragStart>>::target_remove::<Pickable>(), // Disable picking
+                On::<Pointer<DragEnd>>::target_insert(Pickable {
+                    should_block_lower: true,
+                    should_emit_events: true,
+                }), // Re-enable picking
+                On::<Pointer<Drag>>::send_event::<GenericDragEvent>(),
+            ));
         }
     }
 }

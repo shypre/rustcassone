@@ -17,6 +17,7 @@ pub enum AreaType {
 // road or town edges, and last optional groups is if cloister is present.
 // https://en.wikipedia.org/wiki/Carcassonne_(board_game)#Tiles
 #[derive(Copy, Clone, Debug)]
+#[allow(non_camel_case_types)]
 pub enum TileType {
     Unspecified,
     // base game

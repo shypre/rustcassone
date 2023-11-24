@@ -15,15 +15,6 @@ use bevy_mod_picking::prelude::*;
 #[derive(Component)]
 pub struct MainCamera;
 
-#[derive(Event)]
-pub struct TileDragEvent(Entity, Vec2);
-
-impl From<ListenerInput<Pointer<Drag>>> for TileDragEvent {
-    fn from(event: ListenerInput<Pointer<Drag>>) -> Self {
-        TileDragEvent(event.target, event.delta)
-    }
-}
-
 #[derive(Component, Copy, Clone)]
 pub struct AreaEntityInfo {
     pub tile_idx: TileIndex,
@@ -38,7 +29,16 @@ pub struct TileEntityInfo {
     pub area_idxs: Vec<TileAreaIndex>,
 }
 
-pub fn handle_tile_area_drag_event(
+#[derive(Event)]
+pub struct TileDragEvent(Entity, Vec2);
+
+impl From<ListenerInput<Pointer<Drag>>> for TileDragEvent {
+    fn from(event: ListenerInput<Pointer<Drag>>) -> Self {
+        TileDragEvent(event.target, event.delta)
+    }
+}
+
+pub fn handle_tile_drag_event(
     mut drag_event: EventReader<TileDragEvent>,
     mut q: Query<(Entity, &mut Transform, &TileEntityInfo)>,
     camera_q: Query<(&Camera, &OrthographicProjection, &GlobalTransform), With<MainCamera>>,
@@ -61,6 +61,33 @@ pub fn handle_tile_area_drag_event(
             if ent.2.tile_idx == q_tile_info.tile_idx {
                 ent.1.translation += translation;
             }
+        }
+    }
+}
+
+#[derive(Event)]
+pub struct GenericDragEvent(Entity, Vec2);
+
+impl From<ListenerInput<Pointer<Drag>>> for GenericDragEvent {
+    fn from(event: ListenerInput<Pointer<Drag>>) -> Self {
+        GenericDragEvent(event.target, event.delta)
+    }
+}
+
+pub fn handle_generic_drag_event(
+    mut drag_event: EventReader<GenericDragEvent>,
+    mut q: Query<(Entity, &mut Transform)>,
+    camera_q: Query<(&Camera, &OrthographicProjection, &GlobalTransform), With<MainCamera>>,
+) {
+    for event in drag_event.iter() {
+        let e = event.0;
+        info!("cube {:?} drag_event {:?}", event.0, event.1);
+        if let Ok((_e, mut e_transform)) = q.get_mut(e) {
+            let mut translate = event.1.extend(0.0);
+            // it's now reversed for some reason, didn't used to be.
+            translate.y *= -1.0;
+            e_transform.translation += translate * camera_q.single().1.scale;
+        } else {
         }
     }
 }
@@ -99,39 +126,39 @@ pub fn get_area_type_info(area_type: AreaType) -> AreaTypeRenderInfo {
     match area_type {
         AreaType::Unspecified => AreaTypeRenderInfo {
             color: Color::ORANGE,
-            z_height: -1.0,
+            z_height: -0.1,
         },
         AreaType::Cloister => AreaTypeRenderInfo {
             color: Color::CRIMSON,
-            z_height: -2.0,
+            z_height: -0.2,
         },
         AreaType::PennantTown => AreaTypeRenderInfo {
             color: Color::GOLD,
-            z_height: -3.0,
+            z_height: -0.3,
         },
         AreaType::Town => AreaTypeRenderInfo {
             color: Color::rgb(0.44, 0.31, 0.22),
-            z_height: -4.0,
+            z_height: -0.4,
         },
         AreaType::RoadStopMarker => AreaTypeRenderInfo {
             color: Color::GRAY,
-            z_height: -5.0,
+            z_height: -0.5,
         },
         AreaType::EndRoad => AreaTypeRenderInfo {
             color: Color::ANTIQUE_WHITE,
-            z_height: -6.0,
+            z_height: -0.6,
         },
         AreaType::Road => AreaTypeRenderInfo {
             color: Color::WHITE,
-            z_height: -7.0,
+            z_height: -0.7,
         },
         AreaType::Farm => AreaTypeRenderInfo {
             color: Color::SEA_GREEN,
-            z_height: -8.0,
+            z_height: -0.8,
         },
         AreaType::Water => AreaTypeRenderInfo {
             color: Color::BLUE,
-            z_height: -9.0,
+            z_height: -0.9,
         },
     }
 }
@@ -177,16 +204,11 @@ pub fn create_areas(
                 mesh: meshes
                     .add(shape::Quad::new(Vec2::new(180., 180.)).into())
                     .into(),
-                material: materials.add(ColorMaterial::from(Color::Rgba {
-                    red: 0.0,
-                    green: 0.0,
-                    blue: 0.0,
-                    alpha: 0.0,
-                })),
+                material: materials.add(ColorMaterial::from(Color::NONE)),
                 transform: Transform::from_translation(Vec3::new(
                     mouse_world_pos.x,
                     mouse_world_pos.y,
-                    10.,
+                    0.0,
                 )),
                 ..default()
             },
@@ -194,22 +216,19 @@ pub fn create_areas(
                 tile_idx,
                 area_idxs: tile_data.all_tiles[tile_idx].areas.clone(),
             },
-            parent_pickable_bundle,
             Highlight {
                 // TODO:  put material in resource
-                hovered: Some(HighlightKind::Fixed(materials.add(ColorMaterial {
-                    color: Color::rgba(0.0, 0.0, 0.0, 0.0),
-                    texture: None,
-                }))),
-                pressed: Some(HighlightKind::Fixed(materials.add(ColorMaterial {
-                    color: Color::rgba(0.0, 0.0, 0.0, 0.0),
-                    texture: None,
-                }))),
-                selected: Some(HighlightKind::Fixed(materials.add(ColorMaterial {
-                    color: Color::rgba(0.0, 0.0, 0.0, 0.0),
-                    texture: None,
-                }))),
+                hovered: Some(HighlightKind::Fixed(
+                    materials.add(ColorMaterial::from(Color::NONE)),
+                )),
+                pressed: Some(HighlightKind::Fixed(
+                    materials.add(ColorMaterial::from(Color::NONE)),
+                )),
+                selected: Some(HighlightKind::Fixed(
+                    materials.add(ColorMaterial::from(Color::NONE)),
+                )),
             },
+            parent_pickable_bundle,
             RaycastPickTarget::default(), // Marker for the `bevy_picking_raycast` backend
             On::<Pointer<DragStart>>::target_insert(Pickable::IGNORE), // Disable picking
             On::<Pointer<DragEnd>>::target_insert(Pickable {
@@ -231,7 +250,7 @@ pub fn create_areas(
 
         let area_info = AreaEntityInfo {
             tile_idx,
-            area_idx: absolute_area_idx, // TODO: use absolute index
+            area_idx: absolute_area_idx,
             area_offset: *area_offset,
         };
 
@@ -252,14 +271,6 @@ pub fn create_areas(
                     ..default()
                 },
                 area_info,
-                PickableBundle::default(), // Makes the entity pickable
-                RaycastPickTarget::default(), // Marker for the `bevy_picking_raycast` backend
-                                           // On::<Pointer<DragStart>>::target_insert(Pickable::IGNORE), // Disable picking
-                                           // On::<Pointer<DragEnd>>::target_insert(Pickable {
-                                           //     should_block_lower: false,
-                                           //     should_emit_events: true,
-                                           // }), // Re-enable picking
-                                           // On::<Pointer<Drag>>::send_event::<TileDragEvent>(),
             ))
             .id();
 
@@ -747,13 +758,11 @@ pub fn create_PRPP_013() -> Vec<AreaRenderDatas> {
     return create_TRTT_013();
 }
 pub fn create_PPPP_0123() -> Vec<AreaRenderDatas> {
-    let area_datas: Vec<AreaRenderDatas> = vec![
-        AreaRenderDatas {
-            mesh: shape::Quad::new(Vec2::new(180., 180.)).into(),
-            offset: Vec2::new(0., 0.),
-            rotation: 0.0,
-        },
-    ];
+    let area_datas: Vec<AreaRenderDatas> = vec![AreaRenderDatas {
+        mesh: shape::Quad::new(Vec2::new(180., 180.)).into(),
+        offset: Vec2::new(0., 0.),
+        rotation: 0.0,
+    }];
     return area_datas;
 }
 
@@ -773,7 +782,7 @@ pub fn create_tile(
 
     let tile_type: TileType = tile_data.all_tiles[tile_idx].tile_type;
 
-    let mut area_data: Vec<AreaRenderDatas>;
+    let area_data: Vec<AreaRenderDatas>;
 
     match tile_type {
         TileType::Unspecified => todo!(),
@@ -821,4 +830,49 @@ pub fn create_tile(
         mouse_world_pos,
         &area_data,
     );
+}
+pub fn create_placeholder_tile(
+    window: &Window,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    camera: &Camera,
+    camera_transform: &GlobalTransform,
+) {
+    let mouse_world_pos: Vec2 = mouse_to_world_position(window, camera, camera_transform);
+
+    commands.spawn((
+        MaterialMesh2dBundle {
+            mesh: meshes
+                .add(shape::Quad::new(Vec2::new(180., 180.)).into())
+                .into(),
+            material: materials.add(ColorMaterial::from(Color::BEIGE)),
+            transform: Transform::from_translation(Vec3::new(
+                mouse_world_pos.x,
+                mouse_world_pos.y,
+                -10.0,
+            )),
+            ..default()
+        },
+        Highlight {
+            // TODO:  put material in resource
+            hovered: Some(HighlightKind::Fixed(
+                materials.add(ColorMaterial::from(Color::BEIGE)),
+            )),
+            pressed: Some(HighlightKind::Fixed(
+                materials.add(ColorMaterial::from(Color::BEIGE)),
+            )),
+            selected: Some(HighlightKind::Fixed(
+                materials.add(ColorMaterial::from(Color::BEIGE)),
+            )),
+        },
+        PickableBundle::default(),
+        RaycastPickTarget::default(), // Marker for the `bevy_picking_raycast` backend
+        On::<Pointer<DragStart>>::target_insert(Pickable::IGNORE), // Disable picking
+        On::<Pointer<DragEnd>>::target_insert(Pickable::default()), // Re-enable picking
+        On::<Pointer<Drag>>::send_event::<GenericDragEvent>(),
+        On::<Pointer<Drop>>::commands_mut(|event, commands| {
+            println!("dropped");
+        }),
+    ));
 }
