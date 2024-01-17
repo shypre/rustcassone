@@ -16,10 +16,11 @@ use bevy_mod_raycast::{
     system_param::{Raycast, RaycastSettings},
     *,
 };
+use petgraph::{data::FromElements, graph::Graph, Undirected};
 use rand::Rng;
-use tiles_render::*;
 
 use tiles::*;
+use tiles_render::*;
 
 fn main() {
     App::new()
@@ -27,6 +28,7 @@ fn main() {
         .add_plugins(DefaultPickingPlugins)
         .add_event::<MouseButtonInput>()
         .add_event::<GenericDragEvent>()
+        .add_event::<GenericDropEvent>()
         .add_event::<TileDragEvent>()
         .add_systems(Startup, (setup))
         .add_systems(
@@ -37,6 +39,7 @@ fn main() {
                 zoom_camera,
                 spawn_tile,
                 handle_generic_drag_event.run_if(on_event::<GenericDragEvent>()),
+                handle_tile_drop_event.run_if(on_event::<GenericDropEvent>()),
                 handle_tile_drag_event.run_if(on_event::<TileDragEvent>()),
                 rotate_tile,
                 print_tile_data,
@@ -199,10 +202,20 @@ fn rotate_tile(
     }
 }
 
+#[derive(Clone, Debug)]
+pub enum Direction {
+    UP,
+    RIGHT,
+    DOWN,
+    LEFT,
+}
+
 #[derive(Resource, Default, Clone, Debug)]
 pub struct GameplayData {
     pub spawned_tiles: Vec<TileIndex>,
     pub unspawned_tiles: Vec<TileIndex>,
+    pub board_graph: Graph<TileIndex, Direction, Undirected>,
+    pub next_placeholder_index: TileIndex,
 }
 
 fn setup(
@@ -218,9 +231,14 @@ fn setup(
         initial_unspawned_tiles.push(i);
     }
 
+    let mut starting_board_graph: Graph<TileIndex, Direction, Undirected> = Default::default();
+    starting_board_graph.add_node(PLACEHOLDER_TILE_OFFSET);
+
     commands.insert_resource::<GameplayData>(GameplayData {
         spawned_tiles: vec![],
         unspawned_tiles: initial_unspawned_tiles,
+        board_graph: starting_board_graph,
+        next_placeholder_index: PLACEHOLDER_TILE_OFFSET + 1,
     });
 
     commands.spawn((

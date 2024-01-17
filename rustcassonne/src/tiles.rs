@@ -76,6 +76,7 @@ pub type EdgeNumber = usize;
 pub type TileAreaIndex = usize;
 pub type MeepleIndex = usize;
 pub type TileIndex = usize;
+pub const PLACEHOLDER_TILE_OFFSET: TileIndex = 100000;
 
 #[derive(Debug, Clone)]
 pub struct TileArea {

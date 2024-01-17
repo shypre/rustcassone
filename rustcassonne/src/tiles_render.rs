@@ -9,6 +9,7 @@ use bevy::{
     render::mesh::Mesh, sprite::MaterialMesh2dBundle, window::PrimaryWindow,
 };
 use bevy_eventlistener::{callbacks::ListenerInput, prelude::*};
+use bevy_mod_picking::backend::HitData;
 use bevy_mod_picking::prelude::*;
 
 /// Used to help identify our main camera
@@ -88,7 +89,52 @@ pub fn handle_generic_drag_event(
             translate.y *= -1.0;
             e_transform.translation += translate * camera_q.single().1.scale;
         } else {
+            println!("uh oh not found: {:?}", e);
         }
+    }
+}
+
+#[derive(Event)]
+pub struct GenericDropEvent {
+    target: Entity,
+    dropped: Entity,
+    position: Option<Vec3>,
+}
+
+impl From<ListenerInput<Pointer<Drop>>> for GenericDropEvent {
+    fn from(event: ListenerInput<Pointer<Drop>>) -> Self {
+        GenericDropEvent {
+            target: event.target,
+            dropped: event.dropped,
+            position: event.hit.position,
+        }
+    }
+}
+
+pub fn handle_tile_drop_event(
+    mut drop_event: EventReader<GenericDropEvent>,
+    mut q: Query<(Entity, &mut Transform)>,
+    // camera_q: Query<(&Camera, &OrthographicProjection, &GlobalTransform), With<MainCamera>>,
+    mut commands: Commands,
+) {
+    for event in drop_event.iter() {
+        info!(
+            "drop_event target: {:?}, dropped: {:?}, hit_position: {:?}",
+            event.target, event.dropped, event.position
+        );
+        let t: Entity;
+        let t_transform: Transform;
+        let Ok((target, target_transform)) = q.get_mut(event.target) else {
+            panic!("uh oh not found: {:?}", event.target)
+        };
+        t = target;
+        t_transform = *target_transform;
+        let Ok((mut _dropped, mut dropped_transform)) = q.get_mut(event.dropped) else {
+            panic!("uh oh not found: {:?}", event.dropped)
+        };
+        dropped_transform.translation.x = t_transform.translation.x;
+        dropped_transform.translation.y = t_transform.translation.y;
+        commands.entity(t).despawn();
     }
 }
 
@@ -871,8 +917,6 @@ pub fn create_placeholder_tile(
         On::<Pointer<DragStart>>::target_insert(Pickable::IGNORE), // Disable picking
         On::<Pointer<DragEnd>>::target_insert(Pickable::default()), // Re-enable picking
         On::<Pointer<Drag>>::send_event::<GenericDragEvent>(),
-        On::<Pointer<Drop>>::commands_mut(|event, commands| {
-            println!("dropped");
-        }),
+        On::<Pointer<Drop>>::send_event::<GenericDropEvent>(),
     ));
 }
