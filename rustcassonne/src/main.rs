@@ -16,8 +16,13 @@ use bevy_mod_raycast::{
     system_param::{Raycast, RaycastSettings},
     *,
 };
-use petgraph::{data::FromElements, graph::Graph, Undirected};
+use petgraph::{
+    data::FromElements,
+    stable_graph::{NodeIndex, StableGraph},
+    Undirected,
+};
 use rand::Rng;
+use std::collections::HashMap;
 
 use tiles::*;
 use tiles_render::*;
@@ -30,7 +35,7 @@ fn main() {
         .add_event::<GenericDragEvent>()
         .add_event::<GenericDropEvent>()
         .add_event::<TileDragEvent>()
-        .add_systems(Startup, (setup))
+        .add_systems(Startup, setup)
         .add_systems(
             Update,
             (
@@ -126,15 +131,28 @@ fn spawn_tile(
             next_tile,
             window.single(),
             tile_data.into_inner(),
-            commands,
-            meshes,
-            materials,
+            &mut commands,
+            &mut meshes,
+            &mut materials,
             camera_q.single().1,
             camera_q.single().3,
         );
 
         gameplay_data.unspawned_tiles.remove(next_tile_index);
         gameplay_data.spawned_tiles.push(next_tile);
+
+        // First tile needs a placeholder tile to start the graph with.
+        if gameplay_data.next_placeholder_index == PLACEHOLDER_TILE_OFFSET {
+            try_insert_placeholder_tiles_to_board(
+                &mut gameplay_data,
+                123456,
+                window,
+                &mut commands,
+                &mut meshes,
+                &mut materials,
+                camera_q,
+            );
+        }
     }
 }
 
@@ -150,13 +168,14 @@ fn spawn_placeholder_tile(
 ) {
     if keys.just_pressed(KeyCode::Y) {
         println!("spawn placeholder tile");
-        create_placeholder_tile(
-            window.single(),
-            commands,
-            meshes,
-            materials,
-            camera_q.single().1,
-            camera_q.single().3,
+        try_insert_placeholder_tiles_to_board(
+            &mut gameplay_data,
+            123456, // nonexistant value
+            window,
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            camera_q,
         );
     }
 }
@@ -202,20 +221,60 @@ fn rotate_tile(
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Direction {
     UP,
     RIGHT,
     DOWN,
     LEFT,
+    NONE,
 }
 
 #[derive(Resource, Default, Clone, Debug)]
 pub struct GameplayData {
     pub spawned_tiles: Vec<TileIndex>,
     pub unspawned_tiles: Vec<TileIndex>,
-    pub board_graph: Graph<TileIndex, Direction, Undirected>,
+    pub board_tile_graph: StableGraph<TileIndex, Direction, Undirected>,
+    pub tile_index_to_tile_graph_index: HashMap<TileIndex, NodeIndex>,
     pub next_placeholder_index: TileIndex,
+    pub board_area_graph: StableGraph<TileAreaIndex, (), Undirected>,
+    pub area_index_to_area_graph_index: HashMap<TileAreaIndex, NodeIndex>,
+}
+
+// Nonexistant adjacent_tile results in placing at mouse position
+fn try_insert_placeholder_tiles_to_board(
+    mut gameplay_data: &mut ResMut<GameplayData>,
+    adjacent_tile: TileIndex,
+    window: Query<&Window>,
+    mut commands: &mut Commands,
+    mut meshes: &mut ResMut<Assets<Mesh>>,
+    mut materials: &mut ResMut<Assets<ColorMaterial>>,
+    mut camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
+) {
+    if !gameplay_data
+        .tile_index_to_tile_graph_index
+        .contains_key(&adjacent_tile)
+    {
+        let next_placeholder_index = gameplay_data.next_placeholder_index;
+        let tile_graph_index = gameplay_data
+            .board_area_graph
+            .add_node(next_placeholder_index);
+        gameplay_data
+            .tile_index_to_tile_graph_index
+            .insert(next_placeholder_index, tile_graph_index);
+
+        create_placeholder_tile(
+            next_placeholder_index,
+            window.single(),
+            commands,
+            meshes,
+            materials,
+            camera_q.single().1,
+            camera_q.single().3,
+        );
+
+        gameplay_data.next_placeholder_index += 1;
+    }
 }
 
 fn setup(
@@ -231,14 +290,21 @@ fn setup(
         initial_unspawned_tiles.push(i);
     }
 
-    let mut starting_board_graph: Graph<TileIndex, Direction, Undirected> = Default::default();
-    starting_board_graph.add_node(PLACEHOLDER_TILE_OFFSET);
+    let mut starting_board_tile_graph: StableGraph<TileIndex, Direction, Undirected> =
+        Default::default();
+    // let starting_node_index = starting_board_tile_graph.add_node(PLACEHOLDER_TILE_OFFSET);
+    let mut starting_tile_graph_index_to_tile_index: HashMap<TileIndex, NodeIndex> =
+        Default::default();
+    // starting_tile_graph_index_to_tile_index.insert(PLACEHOLDER_TILE_OFFSET, starting_node_index);
 
     commands.insert_resource::<GameplayData>(GameplayData {
         spawned_tiles: vec![],
         unspawned_tiles: initial_unspawned_tiles,
-        board_graph: starting_board_graph,
-        next_placeholder_index: PLACEHOLDER_TILE_OFFSET + 1,
+        board_tile_graph: starting_board_tile_graph,
+        next_placeholder_index: PLACEHOLDER_TILE_OFFSET,
+        tile_index_to_tile_graph_index: starting_tile_graph_index_to_tile_index,
+        board_area_graph: Default::default(),
+        area_index_to_area_graph_index: Default::default(),
     });
 
     commands.spawn((

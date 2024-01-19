@@ -30,6 +30,11 @@ pub struct TileEntityInfo {
     pub area_idxs: Vec<TileAreaIndex>,
 }
 
+#[derive(Component, Clone)]
+pub struct PlaceholderTileEntityInfo {
+    pub placeholder_tile_idx: TileIndex,
+}
+
 #[derive(Event)]
 pub struct TileDragEvent(Entity, Vec2);
 
@@ -224,9 +229,9 @@ pub struct AreaRenderDatas {
 }
 
 pub fn create_areas(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut commands: &mut Commands,
+    mut meshes: &mut ResMut<Assets<Mesh>>,
+    mut materials: &mut ResMut<Assets<ColorMaterial>>,
     tile_data: &GameTileData,
     tile_idx: TileIndex,
     mouse_world_pos: Vec2,
@@ -816,9 +821,9 @@ pub fn create_tile(
     tile_idx: TileIndex,
     window: &Window,
     mut tile_data: &GameTileData,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut commands: &mut Commands,
+    mut meshes: &mut ResMut<Assets<Mesh>>,
+    mut materials: &mut ResMut<Assets<ColorMaterial>>,
     camera: &Camera,
     camera_transform: &GlobalTransform,
 ) {
@@ -878,10 +883,11 @@ pub fn create_tile(
     );
 }
 pub fn create_placeholder_tile(
+    placeholder_tile_idx: TileIndex,
     window: &Window,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut commands: &mut Commands,
+    mut meshes: &mut ResMut<Assets<Mesh>>,
+    mut materials: &mut ResMut<Assets<ColorMaterial>>,
     camera: &Camera,
     camera_transform: &GlobalTransform,
 ) {
@@ -911,6 +917,9 @@ pub fn create_placeholder_tile(
             selected: Some(HighlightKind::Fixed(
                 materials.add(ColorMaterial::from(Color::BEIGE)),
             )),
+        },
+        PlaceholderTileEntityInfo {
+            placeholder_tile_idx,
         },
         PickableBundle::default(),
         RaycastPickTarget::default(), // Marker for the `bevy_picking_raycast` backend
