@@ -114,6 +114,7 @@ fn spawn_tile(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut q: Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
     mut camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
 ) {
     if keys.just_pressed(KeyCode::T) {
@@ -150,6 +151,7 @@ fn spawn_tile(
                 &mut commands,
                 &mut meshes,
                 &mut materials,
+                &mut q,
                 camera_q,
             );
         }
@@ -164,6 +166,7 @@ fn spawn_placeholder_tile(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut q: Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
     mut camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
 ) {
     if keys.just_pressed(KeyCode::Y) {
@@ -175,6 +178,7 @@ fn spawn_placeholder_tile(
             &mut commands,
             &mut meshes,
             &mut materials,
+            &mut q,
             camera_q,
         );
     }
@@ -221,13 +225,23 @@ fn rotate_tile(
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Direction {
     UP,
     RIGHT,
     DOWN,
     LEFT,
     NONE,
+}
+
+fn direction_to_offset(dir: Direction) -> Vec2 {
+    match dir {
+        Direction::UP => Vec2 { x: 0.0, y: 180.0 },
+        Direction::RIGHT => Vec2 { x: 180.0, y: 0.0 },
+        Direction::DOWN => Vec2 { x: 0.0, y: -180.0 },
+        Direction::LEFT => Vec2 { x: -180.0, y: 0.0 },
+        Direction::NONE => Vec2 { x: 0.0, y: 0.0 },
+    }
 }
 
 #[derive(Resource, Default, Clone, Debug)]
@@ -244,36 +258,88 @@ pub struct GameplayData {
 // Nonexistant adjacent_tile results in placing at mouse position
 fn try_insert_placeholder_tiles_to_board(
     mut gameplay_data: &mut ResMut<GameplayData>,
-    adjacent_tile: TileIndex,
+    origin_tile_index: TileIndex,
     window: Query<&Window>,
     mut commands: &mut Commands,
     mut meshes: &mut ResMut<Assets<Mesh>>,
     mut materials: &mut ResMut<Assets<ColorMaterial>>,
+    mut q: &mut Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
     mut camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
 ) {
-    if !gameplay_data
+    let origin_tile_graph_index = gameplay_data
         .tile_index_to_tile_graph_index
-        .contains_key(&adjacent_tile)
-    {
+        .get(&origin_tile_index).cloned();
+
+    if !origin_tile_graph_index.is_some() {
         let next_placeholder_index = gameplay_data.next_placeholder_index;
+
+        create_placeholder_tile(
+            next_placeholder_index,
+            commands,
+            meshes,
+            materials,
+            mouse_to_world_position(window.single(), camera_q.single().1, camera_q.single().3),
+        );
+
         let tile_graph_index = gameplay_data
-            .board_area_graph
+            .board_tile_graph
             .add_node(next_placeholder_index);
         gameplay_data
             .tile_index_to_tile_graph_index
             .insert(next_placeholder_index, tile_graph_index);
 
+        gameplay_data.next_placeholder_index += 1;
+        return;
+    }
+
+    let edges = gameplay_data
+        .board_tile_graph.edges(origin_tile_graph_index.unwrap());
+
+        let mut found_directions: Vec<Direction> = vec![];
+    let mut empty_directions: Vec<Direction> = vec![];
+    for e in edges {
+        found_directions.push(e.weight().clone());
+    }
+    for dir in vec![Direction::UP, Direction::RIGHT, Direction::DOWN, Direction::LEFT] {
+        if !found_directions.contains(&dir) {
+            empty_directions.push(dir);
+        }
+    }
+
+    let mut found: bool = false;
+    let mut tile_pos: Vec2 = Default::default();
+    for (_e, transform, tile_info) in q.iter() {
+        if tile_info.tile_idx == origin_tile_index {
+            tile_pos = Vec2{x: transform.translation.x, y:transform.translation.y};
+            found = true;
+            break;
+        }
+    }
+    assert!(found == true);
+
+    for dir in empty_directions {
+        let next_placeholder_index = gameplay_data.next_placeholder_index;
+
         create_placeholder_tile(
             next_placeholder_index,
-            window.single(),
             commands,
             meshes,
             materials,
-            camera_q.single().1,
-            camera_q.single().3,
+            tile_pos + direction_to_offset(dir),
         );
 
+        let placeholder_tile_graph_index = gameplay_data
+            .board_tile_graph
+            .add_node(next_placeholder_index);
+        gameplay_data
+            .tile_index_to_tile_graph_index
+            .insert(next_placeholder_index, placeholder_tile_graph_index);
         gameplay_data.next_placeholder_index += 1;
+
+        gameplay_data.board_tile_graph.add_edge(placeholder_tile_graph_index, origin_tile_graph_index.unwrap(), dir);
+
+        return;
+
     }
 }
 

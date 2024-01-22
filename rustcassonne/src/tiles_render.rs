@@ -884,26 +884,18 @@ pub fn create_tile(
 }
 pub fn create_placeholder_tile(
     placeholder_tile_idx: TileIndex,
-    window: &Window,
     mut commands: &mut Commands,
     mut meshes: &mut ResMut<Assets<Mesh>>,
     mut materials: &mut ResMut<Assets<ColorMaterial>>,
-    camera: &Camera,
-    camera_transform: &GlobalTransform,
+    pos: Vec2,
 ) {
-    let mouse_world_pos: Vec2 = mouse_to_world_position(window, camera, camera_transform);
-
     commands.spawn((
         MaterialMesh2dBundle {
             mesh: meshes
                 .add(shape::Quad::new(Vec2::new(180., 180.)).into())
                 .into(),
             material: materials.add(ColorMaterial::from(Color::BEIGE)),
-            transform: Transform::from_translation(Vec3::new(
-                mouse_world_pos.x,
-                mouse_world_pos.y,
-                -10.0,
-            )),
+            transform: Transform::from_translation(Vec3::new(pos.x, pos.y, -10.0)),
             ..default()
         },
         Highlight {
