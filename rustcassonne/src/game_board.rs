@@ -15,8 +15,9 @@ use bevy_mod_raycast::{
 };
 use petgraph::{
     data::FromElements,
+    dot::{Config, Dot},
     stable_graph::{NodeIndex, StableGraph},
-    Undirected, dot::{Dot, Config},
+    Undirected,
 };
 use rand::Rng;
 use std::collections::HashMap;
@@ -64,7 +65,13 @@ impl GameplayData {
             "area_index_to_area_graph_index: {:?}",
             self.area_index_to_area_graph_index
         );
-        println!("board_tile_graph:\n{:?}", Dot::with_config(&self.board_tile_graph, &[]));
-        println!("board_area_graph:\n{:?}", Dot::with_config(&self.board_area_graph, &[]));
+        println!(
+            "board_tile_graph:\n{:?}",
+            Dot::with_config(&self.board_tile_graph, &[])
+        );
+        println!(
+            "board_area_graph:\n{:?}",
+            Dot::with_config(&self.board_area_graph, &[])
+        );
     }
 }

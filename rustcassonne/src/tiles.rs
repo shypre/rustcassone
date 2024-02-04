@@ -63,18 +63,8 @@ pub enum TileType {
     TWWT_03,
 }
 
-pub enum TeamColor {
-    Blue,
-    Red,
-}
-
-pub struct Meeple {
-    team: TeamColor,
-}
-
 pub type EdgeNumber = usize;
 pub type TileAreaIndex = usize;
-pub type MeepleIndex = usize;
 pub type TileIndex = usize;
 pub const PLACEHOLDER_TILE_OFFSET: TileIndex = 100000;
 
@@ -408,13 +398,15 @@ pub fn create_tiles() -> GameTileData {
     return game_tiles;
 }
 
-pub struct Player {
-    pub team: TeamColor,
-    pub meeples: Vec<MeepleIndex>,
-    pub points: i32,
+pub fn get_absolute_area_from_relative_area(
+    tile_idx: TileIndex,
+    relative_area_idx: TileAreaIndex,
+    tile_data: &GameTileData,
+) -> TileAreaIndex {
+    return tile_data.all_tiles[tile_idx].areas[relative_area_idx];
 }
 
 // All areas connected across tiles.
-pub struct MegaArea {
-    pub connected_areas: Vec<TileAreaIndex>,
-}
+// pub struct MegaArea {
+//     pub connected_areas: Vec<TileAreaIndex>,
+// }

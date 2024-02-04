@@ -3,7 +3,6 @@ use std::vec;
 
 use crate::myshapes::*;
 use crate::tiles::*;
-use crate::game_board::*;
 
 use bevy::{
     input::mouse::MouseButtonInput, math::vec4, prelude::*, render::camera::RenderTarget,
@@ -105,9 +104,9 @@ pub fn handle_tile_drag_event(
 
 #[derive(Event)]
 pub struct PlaceholderTileDropEvent {
-    target: Entity,
-    dropped: Entity,
-    position: Option<Vec3>,
+    pub target: Entity,
+    pub dropped: Entity,
+    pub position: Option<Vec3>,
 }
 
 impl From<ListenerInput<Pointer<Drop>>> for PlaceholderTileDropEvent {
@@ -116,40 +115,6 @@ impl From<ListenerInput<Pointer<Drop>>> for PlaceholderTileDropEvent {
             target: event.target,
             dropped: event.dropped,
             position: event.hit.position,
-        }
-    }
-}
-
-pub fn handle_tile_drop_event(
-    mut drop_event: EventReader<PlaceholderTileDropEvent>,
-    mut q: Query<(Entity, &mut Transform, Option<&TileEntityInfo>)>,
-    // camera_q: Query<(&Camera, &OrthographicProjection, &GlobalTransform), With<MainCamera>>,
-    mut commands: Commands,
-) {
-    for event in drop_event.iter() {
-        info!(
-            "drop_event target: {:?}, dropped: {:?}, hit_position: {:?}",
-            event.target, event.dropped, event.position
-        );
-        let t: Entity;
-        let t_transform: Transform;
-        let Ok((target, target_transform, _)) = q.get_mut(event.target) else {
-            panic!("uh oh not found: {:?}", event.target)
-        };
-        t = target;
-        t_transform = *target_transform;
-        // Dropped entity must be a tile.
-        let Ok((mut _dropped, mut dropped_transform, is_real_tile)) = q.get_mut(event.dropped)
-        else {
-            panic!("uh oh not found: {:?}", event.dropped)
-        };
-        if is_real_tile.is_some() {
-            dropped_transform.translation.x = t_transform.translation.x;
-            dropped_transform.translation.y = t_transform.translation.y;
-            commands.entity(t).despawn();
-        } else {
-            println!("dropped not a tile onto placeholder, ignoring");
-            return;
         }
     }
 }
@@ -223,14 +188,6 @@ pub fn get_area_type_info(area_type: AreaType) -> AreaTypeRenderInfo {
             z_height: -0.9,
         },
     }
-}
-
-pub fn get_absolute_area_from_relative_area(
-    tile_idx: TileIndex,
-    relative_area_idx: TileAreaIndex,
-    tile_data: &GameTileData,
-) -> TileAreaIndex {
-    return tile_data.all_tiles[tile_idx].areas[relative_area_idx];
 }
 
 pub struct AreaRenderDatas {
