@@ -3,6 +3,7 @@ use std::vec;
 
 use crate::myshapes::*;
 use crate::tiles::*;
+use crate::game_board::*;
 
 use bevy::{
     input::mouse::MouseButtonInput, math::vec4, prelude::*, render::camera::RenderTarget,
@@ -35,6 +36,37 @@ pub struct PlaceholderTileEntityInfo {
     pub placeholder_tile_idx: TileIndex,
 }
 
+// Drag event that scales with zoom.
+// TODO: Scale with movement.
+#[derive(Event)]
+pub struct ScaledDragEvent(Entity, Vec2);
+
+impl From<ListenerInput<Pointer<Drag>>> for ScaledDragEvent {
+    fn from(event: ListenerInput<Pointer<Drag>>) -> Self {
+        ScaledDragEvent(event.target, event.delta)
+    }
+}
+
+pub fn handle_scaled_drag_event(
+    mut drag_event: EventReader<ScaledDragEvent>,
+    mut q: Query<(Entity, &mut Transform)>,
+    camera_q: Query<(&Camera, &OrthographicProjection, &GlobalTransform), With<MainCamera>>,
+) {
+    for event in drag_event.iter() {
+        let e = event.0;
+        info!("cube {:?} drag_event {:?}", event.0, event.1);
+        if let Ok((_e, mut e_transform)) = q.get_mut(e) {
+            let mut translate = event.1.extend(0.0);
+            // it's now reversed for some reason, didn't used to be.
+            translate.y *= -1.0;
+            e_transform.translation += translate * camera_q.single().1.scale;
+        } else {
+            println!("uh oh not found: {:?}", e);
+        }
+    }
+}
+
+// Same as above but drags
 #[derive(Event)]
 pub struct TileDragEvent(Entity, Vec2);
 
@@ -72,43 +104,15 @@ pub fn handle_tile_drag_event(
 }
 
 #[derive(Event)]
-pub struct GenericDragEvent(Entity, Vec2);
-
-impl From<ListenerInput<Pointer<Drag>>> for GenericDragEvent {
-    fn from(event: ListenerInput<Pointer<Drag>>) -> Self {
-        GenericDragEvent(event.target, event.delta)
-    }
-}
-
-pub fn handle_generic_drag_event(
-    mut drag_event: EventReader<GenericDragEvent>,
-    mut q: Query<(Entity, &mut Transform)>,
-    camera_q: Query<(&Camera, &OrthographicProjection, &GlobalTransform), With<MainCamera>>,
-) {
-    for event in drag_event.iter() {
-        let e = event.0;
-        info!("cube {:?} drag_event {:?}", event.0, event.1);
-        if let Ok((_e, mut e_transform)) = q.get_mut(e) {
-            let mut translate = event.1.extend(0.0);
-            // it's now reversed for some reason, didn't used to be.
-            translate.y *= -1.0;
-            e_transform.translation += translate * camera_q.single().1.scale;
-        } else {
-            println!("uh oh not found: {:?}", e);
-        }
-    }
-}
-
-#[derive(Event)]
-pub struct GenericDropEvent {
+pub struct PlaceholderTileDropEvent {
     target: Entity,
     dropped: Entity,
     position: Option<Vec3>,
 }
 
-impl From<ListenerInput<Pointer<Drop>>> for GenericDropEvent {
+impl From<ListenerInput<Pointer<Drop>>> for PlaceholderTileDropEvent {
     fn from(event: ListenerInput<Pointer<Drop>>) -> Self {
-        GenericDropEvent {
+        PlaceholderTileDropEvent {
             target: event.target,
             dropped: event.dropped,
             position: event.hit.position,
@@ -117,8 +121,8 @@ impl From<ListenerInput<Pointer<Drop>>> for GenericDropEvent {
 }
 
 pub fn handle_tile_drop_event(
-    mut drop_event: EventReader<GenericDropEvent>,
-    mut q: Query<(Entity, &mut Transform)>,
+    mut drop_event: EventReader<PlaceholderTileDropEvent>,
+    mut q: Query<(Entity, &mut Transform, Option<&TileEntityInfo>)>,
     // camera_q: Query<(&Camera, &OrthographicProjection, &GlobalTransform), With<MainCamera>>,
     mut commands: Commands,
 ) {
@@ -129,17 +133,24 @@ pub fn handle_tile_drop_event(
         );
         let t: Entity;
         let t_transform: Transform;
-        let Ok((target, target_transform)) = q.get_mut(event.target) else {
+        let Ok((target, target_transform, _)) = q.get_mut(event.target) else {
             panic!("uh oh not found: {:?}", event.target)
         };
         t = target;
         t_transform = *target_transform;
-        let Ok((mut _dropped, mut dropped_transform)) = q.get_mut(event.dropped) else {
+        // Dropped entity must be a tile.
+        let Ok((mut _dropped, mut dropped_transform, is_real_tile)) = q.get_mut(event.dropped)
+        else {
             panic!("uh oh not found: {:?}", event.dropped)
         };
-        dropped_transform.translation.x = t_transform.translation.x;
-        dropped_transform.translation.y = t_transform.translation.y;
-        commands.entity(t).despawn();
+        if is_real_tile.is_some() {
+            dropped_transform.translation.x = t_transform.translation.x;
+            dropped_transform.translation.y = t_transform.translation.y;
+            commands.entity(t).despawn();
+        } else {
+            println!("dropped not a tile onto placeholder, ignoring");
+            return;
+        }
     }
 }
 
@@ -243,6 +254,7 @@ pub fn create_areas(
     let num_areas = tile_data.all_tiles[tile_idx].areas.len();
     assert!(num_areas == area_render_datas.len());
 
+    // Free tile should not have areas be interactible. This will change once the tile is added to the game board.
     let mut parent_pickable_bundle = PickableBundle::default();
     parent_pickable_bundle.pickable = Pickable {
         should_block_lower: true,
@@ -286,7 +298,8 @@ pub fn create_areas(
                 should_block_lower: true,
                 should_emit_events: true,
             }), // Re-enable picking
-            On::<Pointer<Drag>>::send_event::<TileDragEvent>(),
+            // On::<Pointer<Drag>>::send_event::<TileDragEvent>(),
+            On::<Pointer<Drag>>::send_event::<ScaledDragEvent>(),
         ))
         .id();
 
@@ -917,7 +930,7 @@ pub fn create_placeholder_tile(
         RaycastPickTarget::default(), // Marker for the `bevy_picking_raycast` backend
         On::<Pointer<DragStart>>::target_insert(Pickable::IGNORE), // Disable picking
         On::<Pointer<DragEnd>>::target_insert(Pickable::default()), // Re-enable picking
-        On::<Pointer<Drag>>::send_event::<GenericDragEvent>(),
-        On::<Pointer<Drop>>::send_event::<GenericDropEvent>(),
+        On::<Pointer<Drag>>::send_event::<ScaledDragEvent>(),
+        On::<Pointer<Drop>>::send_event::<PlaceholderTileDropEvent>(),
     ));
 }

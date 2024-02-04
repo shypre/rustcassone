@@ -3,6 +3,7 @@
 mod myshapes;
 mod tiles;
 mod tiles_render;
+mod game_board;
 
 use std::f32::consts::PI;
 
@@ -19,22 +20,23 @@ use bevy_mod_raycast::{
 use petgraph::{
     data::FromElements,
     stable_graph::{NodeIndex, StableGraph},
-    Undirected,
+    Undirected, dot::{Dot, Config},
 };
 use rand::Rng;
 use std::collections::HashMap;
 
 use tiles::*;
 use tiles_render::*;
+use game_board::*;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(DefaultPickingPlugins)
         .add_event::<MouseButtonInput>()
-        .add_event::<GenericDragEvent>()
-        .add_event::<GenericDropEvent>()
+        .add_event::<ScaledDragEvent>()
         .add_event::<TileDragEvent>()
+        .add_event::<PlaceholderTileDropEvent>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -43,10 +45,11 @@ fn main() {
                 move_camera,
                 zoom_camera,
                 spawn_tile,
-                handle_generic_drag_event.run_if(on_event::<GenericDragEvent>()),
-                handle_tile_drop_event.run_if(on_event::<GenericDropEvent>()),
+                handle_scaled_drag_event.run_if(on_event::<ScaledDragEvent>()),
                 handle_tile_drag_event.run_if(on_event::<TileDragEvent>()),
+                handle_tile_drop_event.run_if(on_event::<PlaceholderTileDropEvent>()),
                 rotate_tile,
+                print_game_data,
                 print_tile_data,
                 spawn_placeholder_tile,
             ),
@@ -225,36 +228,6 @@ fn rotate_tile(
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Direction {
-    UP,
-    RIGHT,
-    DOWN,
-    LEFT,
-    NONE,
-}
-
-fn direction_to_offset(dir: Direction) -> Vec2 {
-    match dir {
-        Direction::UP => Vec2 { x: 0.0, y: 180.0 },
-        Direction::RIGHT => Vec2 { x: 180.0, y: 0.0 },
-        Direction::DOWN => Vec2 { x: 0.0, y: -180.0 },
-        Direction::LEFT => Vec2 { x: -180.0, y: 0.0 },
-        Direction::NONE => Vec2 { x: 0.0, y: 0.0 },
-    }
-}
-
-#[derive(Resource, Default, Clone, Debug)]
-pub struct GameplayData {
-    pub spawned_tiles: Vec<TileIndex>,
-    pub unspawned_tiles: Vec<TileIndex>,
-    pub board_tile_graph: StableGraph<TileIndex, Direction, Undirected>,
-    pub tile_index_to_tile_graph_index: HashMap<TileIndex, NodeIndex>,
-    pub next_placeholder_index: TileIndex,
-    pub board_area_graph: StableGraph<TileAreaIndex, (), Undirected>,
-    pub area_index_to_area_graph_index: HashMap<TileAreaIndex, NodeIndex>,
-}
-
 // Nonexistant adjacent_tile results in placing at mouse position
 fn try_insert_placeholder_tiles_to_board(
     mut gameplay_data: &mut ResMut<GameplayData>,
@@ -268,7 +241,8 @@ fn try_insert_placeholder_tiles_to_board(
 ) {
     let origin_tile_graph_index = gameplay_data
         .tile_index_to_tile_graph_index
-        .get(&origin_tile_index).cloned();
+        .get(&origin_tile_index)
+        .cloned();
 
     if !origin_tile_graph_index.is_some() {
         let next_placeholder_index = gameplay_data.next_placeholder_index;
@@ -293,14 +267,20 @@ fn try_insert_placeholder_tiles_to_board(
     }
 
     let edges = gameplay_data
-        .board_tile_graph.edges(origin_tile_graph_index.unwrap());
+        .board_tile_graph
+        .edges(origin_tile_graph_index.unwrap());
 
-        let mut found_directions: Vec<Direction> = vec![];
-    let mut empty_directions: Vec<Direction> = vec![];
+    let mut found_directions: Vec<TileDirection> = vec![];
+    let mut empty_directions: Vec<TileDirection> = vec![];
     for e in edges {
         found_directions.push(e.weight().clone());
     }
-    for dir in vec![Direction::UP, Direction::RIGHT, Direction::DOWN, Direction::LEFT] {
+    for dir in vec![
+        TileDirection::UP,
+        TileDirection::RIGHT,
+        TileDirection::DOWN,
+        TileDirection::LEFT,
+    ] {
         if !found_directions.contains(&dir) {
             empty_directions.push(dir);
         }
@@ -310,7 +290,10 @@ fn try_insert_placeholder_tiles_to_board(
     let mut tile_pos: Vec2 = Default::default();
     for (_e, transform, tile_info) in q.iter() {
         if tile_info.tile_idx == origin_tile_index {
-            tile_pos = Vec2{x: transform.translation.x, y:transform.translation.y};
+            tile_pos = Vec2 {
+                x: transform.translation.x,
+                y: transform.translation.y,
+            };
             found = true;
             break;
         }
@@ -336,10 +319,13 @@ fn try_insert_placeholder_tiles_to_board(
             .insert(next_placeholder_index, placeholder_tile_graph_index);
         gameplay_data.next_placeholder_index += 1;
 
-        gameplay_data.board_tile_graph.add_edge(placeholder_tile_graph_index, origin_tile_graph_index.unwrap(), dir);
+        gameplay_data.board_tile_graph.add_edge(
+            placeholder_tile_graph_index,
+            origin_tile_graph_index.unwrap(),
+            dir,
+        );
 
         return;
-
     }
 }
 
@@ -356,7 +342,7 @@ fn setup(
         initial_unspawned_tiles.push(i);
     }
 
-    let mut starting_board_tile_graph: StableGraph<TileIndex, Direction, Undirected> =
+    let mut starting_board_tile_graph: StableGraph<TileIndex, TileDirection, Undirected> =
         Default::default();
     // let starting_node_index = starting_board_tile_graph.add_node(PLACEHOLDER_TILE_OFFSET);
     let mut starting_tile_graph_index_to_tile_index: HashMap<TileIndex, NodeIndex> =
@@ -409,7 +395,7 @@ fn setup(
                     should_block_lower: true,
                     should_emit_events: true,
                 }), // Re-enable picking
-                On::<Pointer<Drag>>::send_event::<GenericDragEvent>(),
+                On::<Pointer<Drag>>::send_event::<ScaledDragEvent>(),
             ));
 
             x_offset += 40.0;
@@ -418,16 +404,16 @@ fn setup(
     }
 }
 
-fn print_tile_data(
-    keys: Res<Input<KeyCode>>,
-    tile_data: Res<GameTileData>,
-    game_data: Res<GameplayData>,
-) {
+fn print_game_data(keys: Res<Input<KeyCode>>, game_data: Res<GameplayData>) {
     if keys.just_pressed(KeyCode::P) {
+        game_data.print();
+    }
+}
+
+fn print_tile_data(keys: Res<Input<KeyCode>>, tile_data: Res<GameTileData>) {
+    if keys.just_pressed(KeyCode::BracketLeft) {
         println!("all_tiles: {:?}", tile_data.all_tiles);
         println!("all_areas: {:?}", tile_data.all_areas);
-        println!("spawned_tiles: {:?}", game_data.spawned_tiles);
-        println!("unspawned_tiles: {:?}", game_data.unspawned_tiles);
     }
 }
 
@@ -462,7 +448,7 @@ fn spawn_square_on_click(
                     should_block_lower: true,
                     should_emit_events: true,
                 }), // Re-enable picking
-                On::<Pointer<Drag>>::send_event::<GenericDragEvent>(),
+                On::<Pointer<Drag>>::send_event::<ScaledDragEvent>(),
             ));
         }
     }
