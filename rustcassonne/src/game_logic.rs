@@ -20,7 +20,8 @@ use crate::tiles_render::*;
 
 pub fn handle_tile_drop_event(
     mut drop_event: EventReader<PlaceholderTileDropEvent>,
-    mut q: Query<(Entity, &mut Transform, Option<&TileEntityInfo>)>,
+    mut gameplay_data: ResMut<GameplayData>,
+    mut q: Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
     // camera_q: Query<(&Camera, &OrthographicProjection, &GlobalTransform), With<MainCamera>>,
     mut commands: Commands,
 ) {
@@ -29,26 +30,40 @@ pub fn handle_tile_drop_event(
             "drop_event target: {:?}, dropped: {:?}, hit_position: {:?}",
             event.target, event.dropped, event.position
         );
-        let t: Entity;
         let t_transform: Transform;
-        let Ok((target, target_transform, _)) = q.get_mut(event.target) else {
-            panic!("uh oh not found: {:?}", event.target)
-        };
-        t = target;
-        t_transform = *target_transform;
-        // Dropped entity must be a tile.
-        let Ok((mut _dropped, mut dropped_transform, is_real_tile)) = q.get_mut(event.dropped)
+        let t_tile_index: TileIndex;
+        {
+            let Ok((target, target_transform, target_tile_info)) = q.get_mut(event.target) else {
+                panic!("uh oh not found: {:?}", event.target)
+            };
+            // Target must be a placeholder tile
+            if target_tile_info.tile_idx < PLACEHOLDER_TILE_OFFSET {
+                println!("dropped onto a non-placeholder tile, ignoring");
+                return;
+            }
+            t_transform = *target_transform;
+            t_tile_index = target_tile_info.tile_idx;
+        }
+        // Dropped entity must be a non-placeholder tile.
+        let Ok((mut _dropped, mut dropped_transform, dropped_tile_info)) = q.get_mut(event.dropped)
         else {
             panic!("uh oh not found: {:?}", event.dropped)
         };
-        if is_real_tile.is_some() {
-            dropped_transform.translation.x = t_transform.translation.x;
-            dropped_transform.translation.y = t_transform.translation.y;
-            commands.entity(t).despawn();
-        } else {
-            println!("dropped not a tile onto placeholder, ignoring");
+        if dropped_tile_info.tile_idx >= PLACEHOLDER_TILE_OFFSET {
+            println!("target is a placeholder tile, ignoring");
             return;
         }
+
+        dropped_transform.translation.x = t_transform.translation.x;
+        dropped_transform.translation.y = t_transform.translation.y;
+
+        replace_placeholder_tile_on_board(
+            &mut gameplay_data,
+            dropped_tile_info.tile_idx,
+            t_tile_index,
+            &mut commands,
+            &mut q,
+        );
     }
 }
 
@@ -90,14 +105,12 @@ pub fn spawn_tile(
 
         // First tile needs a placeholder tile to start the graph with.
         if gameplay_data.next_placeholder_index == PLACEHOLDER_TILE_OFFSET {
-            try_insert_placeholder_tiles_to_board(
+            add_placeholder_tile_and_maybe_init_board(
                 &mut gameplay_data,
-                123456,
                 window,
                 &mut commands,
                 &mut meshes,
                 &mut materials,
-                &mut q,
                 camera_q,
             );
         }
@@ -117,14 +130,12 @@ pub fn spawn_placeholder_tile(
 ) {
     if keys.just_pressed(KeyCode::Y) {
         println!("spawn placeholder tile");
-        try_insert_placeholder_tiles_to_board(
+        add_placeholder_tile_and_maybe_init_board(
             &mut gameplay_data,
-            123456, // nonexistant value
             window,
             &mut commands,
             &mut meshes,
             &mut materials,
-            &mut q,
             camera_q,
         );
     }
@@ -156,11 +167,11 @@ pub fn rotate_tile(
 
         let hits = raycast.cast_ray(ray, &RaycastSettings::default());
         for hit in hits {
-            let q_tile_info: TileEntityInfo;
-            if let Ok((_e, mut _e_transform, tile_info)) = q.get(hit.0) {
-                q_tile_info = tile_info.clone();
+            if let Ok((_e, mut _e_transform, mut tile_info)) = q.get_mut(hit.0) {
+                tile_info.dir = rotate_direction(tile_info.dir.clone());
+                let tile_idx = tile_info.tile_idx;
                 for mut tile in q.iter_mut() {
-                    if tile.2.tile_idx == q_tile_info.tile_idx {
+                    if tile.2.tile_idx == tile_idx {
                         tile.1.rotate_z(PI / 2.0);
                     }
                 }
@@ -171,103 +182,118 @@ pub fn rotate_tile(
     }
 }
 
+fn get_data_of_tile(
+    tile_index: TileIndex,
+    mut q: &mut Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
+) -> Option<(Entity, Transform, TileEntityInfo)> {
+    for data in q.iter() {
+        if data.2.tile_idx == tile_index {
+            let ret = (data.0, data.1.clone(), data.2.clone());
+            return Some(ret);
+        }
+    }
+    return None;
+}
+
 // Nonexistant adjacent_tile results in placing at mouse position
-fn try_insert_placeholder_tiles_to_board(
+fn add_placeholder_tile_and_maybe_init_board(
     mut gameplay_data: &mut ResMut<GameplayData>,
-    origin_tile_index: TileIndex,
     window: Query<&Window>,
     mut commands: &mut Commands,
     mut meshes: &mut ResMut<Assets<Mesh>>,
     mut materials: &mut ResMut<Assets<ColorMaterial>>,
-    mut q: &mut Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
     mut camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
 ) {
-    let origin_tile_graph_index = gameplay_data
-        .tile_index_to_tile_graph_index
-        .get(&origin_tile_index)
-        .cloned();
+    let next_placeholder_index = gameplay_data.next_placeholder_index;
+    create_placeholder_tile(
+        next_placeholder_index,
+        commands,
+        meshes,
+        materials,
+        mouse_to_world_position(window.single(), camera_q.single().1, camera_q.single().3),
+    );
+    gameplay_data.next_placeholder_index += 1;
 
-    if !origin_tile_graph_index.is_some() {
-        let next_placeholder_index = gameplay_data.next_placeholder_index;
-
-        create_placeholder_tile(
-            next_placeholder_index,
-            commands,
-            meshes,
-            materials,
-            mouse_to_world_position(window.single(), camera_q.single().1, camera_q.single().3),
-        );
-
-        let tile_graph_index = gameplay_data
-            .board_tile_graph
-            .add_node(next_placeholder_index);
-        gameplay_data
-            .tile_index_to_tile_graph_index
-            .insert(next_placeholder_index, tile_graph_index);
-
-        gameplay_data.next_placeholder_index += 1;
+    // If origin tile exists already, don't add it to the matrix.
+    if gameplay_data
+        .board_tile_matrix
+        .contains_key(&TileMatrixCoords { x: 0, y: 0 })
+    {
+        println!("adding additional placeholder tile, it will be free floating");
         return;
     }
 
-    let edges = gameplay_data
-        .board_tile_graph
-        .edges(origin_tile_graph_index.unwrap());
+    gameplay_data
+        .board_tile_matrix
+        .insert(TileMatrixCoords { x: 0, y: 0 }, next_placeholder_index);
+    gameplay_data
+        .board_tile_matrix_inverse
+        .insert(next_placeholder_index, TileMatrixCoords { x: 0, y: 0 });
+}
 
-    let mut found_directions: Vec<TileDirection> = vec![];
-    let mut empty_directions: Vec<TileDirection> = vec![];
-    for e in edges {
-        found_directions.push(e.weight().clone());
-    }
-    for dir in vec![
-        TileDirection::UP,
-        TileDirection::RIGHT,
-        TileDirection::DOWN,
-        TileDirection::LEFT,
-    ] {
-        if !found_directions.contains(&dir) {
-            empty_directions.push(dir);
+fn replace_placeholder_tile_on_board(
+    mut gameplay_data: &mut ResMut<GameplayData>,
+    replacement_tile_index: TileIndex,
+    origin_tile_index: TileIndex,
+    mut commands: &mut Commands,
+    mut q: &mut Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
+) {
+    let op_origin_tile_data = get_data_of_tile(origin_tile_index, q);
+    {
+        if op_origin_tile_data.is_none() {
+            panic!(
+                "origin_tile_index {:?} not found in world:\n",
+                origin_tile_index
+            );
+        }
+
+        if !gameplay_data
+            .board_tile_matrix_inverse
+            .contains_key(&origin_tile_index)
+        {
+            panic!(
+                "origin_tile_index {:?} not found in matrix:\n{:?}",
+                origin_tile_index, gameplay_data.board_tile_matrix_inverse
+            );
         }
     }
+    let origin_tile_data = op_origin_tile_data.unwrap();
 
-    let mut found: bool = false;
-    let mut tile_pos: Vec2 = Default::default();
-    for (_e, transform, tile_info) in q.iter() {
-        if tile_info.tile_idx == origin_tile_index {
-            tile_pos = Vec2 {
-                x: transform.translation.x,
-                y: transform.translation.y,
-            };
-            found = true;
-            break;
+    let op_replacement_tile_data = get_data_of_tile(replacement_tile_index, q);
+    {
+        if op_replacement_tile_data.is_none() {
+            panic!(
+                "replacement_tile_index {:?} not found in world:\n",
+                replacement_tile_index
+            );
+        }
+
+        if gameplay_data
+            .board_tile_matrix_inverse
+            .contains_key(&replacement_tile_index)
+        {
+            panic!(
+                "replacement_tile_index {:?} already in matrix:\n{:?}",
+                replacement_tile_index, gameplay_data.board_tile_matrix_inverse
+            );
         }
     }
-    assert!(found == true);
+    let target_tile_data = op_replacement_tile_data.unwrap();
 
-    for dir in empty_directions {
-        let next_placeholder_index = gameplay_data.next_placeholder_index;
+    let coords: TileMatrixCoords = gameplay_data
+        .board_tile_matrix_inverse
+        .get(&origin_tile_data.2.tile_idx)
+        .unwrap()
+        .clone();
+    gameplay_data
+        .board_tile_matrix_inverse
+        .remove(&origin_tile_data.2.tile_idx);
+    gameplay_data
+        .board_tile_matrix_inverse
+        .insert(target_tile_data.2.tile_idx, coords);
+    *gameplay_data.board_tile_matrix.get_mut(&coords).unwrap() = target_tile_data.2.tile_idx;
 
-        create_placeholder_tile(
-            next_placeholder_index,
-            commands,
-            meshes,
-            materials,
-            tile_pos + direction_to_offset(dir),
-        );
+    commands.entity(origin_tile_data.0).despawn();
 
-        let placeholder_tile_graph_index = gameplay_data
-            .board_tile_graph
-            .add_node(next_placeholder_index);
-        gameplay_data
-            .tile_index_to_tile_graph_index
-            .insert(next_placeholder_index, placeholder_tile_graph_index);
-        gameplay_data.next_placeholder_index += 1;
-
-        gameplay_data.board_tile_graph.add_edge(
-            placeholder_tile_graph_index,
-            origin_tile_graph_index.unwrap(),
-            dir,
-        );
-
-        return;
-    }
+    // TODO: insert placeholder tiles around new tile
 }

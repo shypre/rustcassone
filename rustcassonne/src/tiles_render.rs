@@ -24,15 +24,40 @@ pub struct AreaEntityInfo {
     pub area_offset: Vec2,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TileDirection {
+    UP,
+    RIGHT,
+    DOWN,
+    LEFT,
+    NONE,
+}
+
+pub fn rotate_direction(dir: TileDirection) -> TileDirection {
+    match dir {
+        TileDirection::UP => TileDirection::RIGHT,
+        TileDirection::RIGHT => TileDirection::DOWN,
+        TileDirection::DOWN => TileDirection::LEFT,
+        TileDirection::LEFT => TileDirection::UP,
+        TileDirection::NONE => TileDirection::NONE,
+    }
+}
+
+pub fn direction_to_offset(dir: TileDirection) -> Vec2 {
+    match dir {
+        TileDirection::UP => Vec2 { x: 0.0, y: 180.0 },
+        TileDirection::RIGHT => Vec2 { x: 180.0, y: 0.0 },
+        TileDirection::DOWN => Vec2 { x: 0.0, y: -180.0 },
+        TileDirection::LEFT => Vec2 { x: -180.0, y: 0.0 },
+        TileDirection::NONE => Vec2 { x: 0.0, y: 0.0 },
+    }
+}
+
 #[derive(Component, Clone)]
 pub struct TileEntityInfo {
     pub tile_idx: TileIndex,
     pub area_idxs: Vec<TileAreaIndex>,
-}
-
-#[derive(Component, Clone)]
-pub struct PlaceholderTileEntityInfo {
-    pub placeholder_tile_idx: TileIndex,
+    pub dir: TileDirection,
 }
 
 // Drag event that scales with zoom.
@@ -235,6 +260,7 @@ pub fn create_areas(
             TileEntityInfo {
                 tile_idx,
                 area_idxs: tile_data.all_tiles[tile_idx].areas.clone(),
+                dir: TileDirection::UP,
             },
             Highlight {
                 // TODO:  put material in resource
@@ -880,8 +906,10 @@ pub fn create_placeholder_tile(
                 materials.add(ColorMaterial::from(Color::BEIGE)),
             )),
         },
-        PlaceholderTileEntityInfo {
-            placeholder_tile_idx,
+        TileEntityInfo {
+            tile_idx: placeholder_tile_idx,
+            area_idxs: vec![],
+            dir: TileDirection::NONE,
         },
         PickableBundle::default(),
         RaycastPickTarget::default(), // Marker for the `bevy_picking_raycast` backend

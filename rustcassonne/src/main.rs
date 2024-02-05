@@ -101,9 +101,9 @@ fn setup(
     commands.insert_resource::<GameplayData>(GameplayData {
         spawned_tiles: vec![],
         unspawned_tiles: initial_unspawned_tiles,
-        board_tile_graph: Default::default(),
+        board_tile_matrix: Default::default(),
+        board_tile_matrix_inverse: Default::default(),
         next_placeholder_index: PLACEHOLDER_TILE_OFFSET,
-        tile_index_to_tile_graph_index: Default::default(),
         board_area_graph: Default::default(),
         area_index_to_area_graph_index: Default::default(),
     });
