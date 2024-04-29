@@ -24,6 +24,8 @@ pub fn handle_tile_drop_event(
     mut q: Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
     // camera_q: Query<(&Camera, &OrthographicProjection, &GlobalTransform), With<MainCamera>>,
     mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     for event in drop_event.iter() {
         info!(
@@ -62,6 +64,8 @@ pub fn handle_tile_drop_event(
             dropped_tile_info.tile_idx,
             t_tile_index,
             &mut commands,
+            &mut meshes,
+            &mut materials,
             &mut q,
         );
     }
@@ -236,6 +240,8 @@ fn replace_placeholder_tile_on_board(
     replacement_tile_index: TileIndex,
     origin_tile_index: TileIndex,
     mut commands: &mut Commands,
+    mut meshes: &mut ResMut<Assets<Mesh>>,
+    mut materials: &mut ResMut<Assets<ColorMaterial>>,
     mut q: &mut Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
 ) {
     let op_origin_tile_data = get_data_of_tile(origin_tile_index, q);
@@ -293,7 +299,39 @@ fn replace_placeholder_tile_on_board(
         .insert(target_tile_data.2.tile_idx, coords);
     *gameplay_data.board_tile_matrix.get_mut(&coords).unwrap() = target_tile_data.2.tile_idx;
 
+    // Copy it out before we destroy the placeholder tile.
+    let origin_tile_translation = origin_tile_data.1.translation;
+    println!("origin_tile_translation: {origin_tile_translation}");
     commands.entity(origin_tile_data.0).despawn();
 
-    // TODO: insert placeholder tiles around new tile
+    // Remove drag function for the new tile.
+    // TODO: still crashes when the tile is dragged over placeholder
+    commands.entity(target_tile_data.0).remove::<On::<Pointer<Drag>>>();
+    commands.entity(target_tile_data.0).remove::<On::<Pointer<Drop>>>();
+    commands.entity(target_tile_data.0).remove::<On::<Pointer<DragStart>>>();
+    commands.entity(target_tile_data.0).remove::<On::<Pointer<DragEnd>>>();
+
+    // insert placeholder tiles around new tile
+    for dir in NEIGHBOR_COORDS {
+        let new_coords = TileMatrixCoords {
+            x: coords.x + dir.x,
+            y: coords.y + dir.y,
+        };
+        if !gameplay_data.board_tile_matrix.contains_key(&new_coords) {
+            let new_pos = Vec2 {
+                x: origin_tile_translation.x + (dir.x as f32 * 180.0),
+                y: origin_tile_translation.y + (dir.y as f32 * 180.0),
+            };
+
+            let next_placeholder_index = gameplay_data.next_placeholder_index;
+            create_placeholder_tile(next_placeholder_index, commands, meshes, materials, new_pos);
+            gameplay_data.next_placeholder_index += 1;
+            gameplay_data
+                .board_tile_matrix
+                .insert(new_coords, next_placeholder_index);
+            gameplay_data
+                .board_tile_matrix_inverse
+                .insert(next_placeholder_index, new_coords);
+        }
+    }
 }

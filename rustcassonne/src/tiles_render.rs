@@ -4,6 +4,7 @@ use std::vec;
 use crate::myshapes::*;
 use crate::tiles::*;
 
+use bevy::prelude::shape::Circle;
 use bevy::{
     input::mouse::MouseButtonInput, math::vec4, prelude::*, render::camera::RenderTarget,
     render::mesh::Mesh, sprite::MaterialMesh2dBundle, window::PrimaryWindow,
@@ -322,6 +323,29 @@ pub fn create_areas(
             .id();
 
         commands.entity(parent).push_children(&[child]);
+    }
+
+    // Draw dot at reference location
+    for c in vec![Color::BLACK, Color::WHITE] {
+        let radius = if c == Color::WHITE { 6.0 } else { 9.0 };
+        let z = if c == Color::WHITE { 20.0 } else { 19.0 };
+        let reference_dot = commands
+            .spawn((MaterialMesh2dBundle {
+                mesh: meshes
+                    .add(
+                        Circle {
+                            radius,
+                            vertices: 64,
+                        }
+                        .into(),
+                    )
+                    .into(),
+                material: materials.add(c.into()),
+                transform: Transform::from_translation(Vec3::new(-75.0, 75.0, z)),
+                ..default()
+            },))
+            .id();
+        commands.entity(parent).push_children(&[reference_dot]);
     }
 }
 

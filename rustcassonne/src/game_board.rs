@@ -24,9 +24,17 @@ use std::collections::HashMap;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TileMatrixCoords {
-    pub x: usize,
-    pub y: usize,
+    pub x: i32,
+    pub y: i32,
 }
+
+// Starts from north and goes clockwise.
+pub const NEIGHBOR_COORDS: [TileMatrixCoords; 4] = [
+    TileMatrixCoords { x: 0, y: 1 },
+    TileMatrixCoords { x: 1, y: 0 },
+    TileMatrixCoords { x: 0, y: -1 },
+    TileMatrixCoords { x: -1, y: 0 },
+];
 
 // #[derive(Clone, Debug, Eq, PartialEq)]
 // pub struct TileMatrixInfo {
