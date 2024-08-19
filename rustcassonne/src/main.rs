@@ -12,7 +12,7 @@ use std::f32::consts::PI;
 
 use bevy::{input::mouse::MouseButtonInput, prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_eventlistener::prelude::*;
-use bevy_mod_picking::prelude::*;
+use bevy_mod_picking::{prelude::*, debug::DebugPickingMode};
 
 use game_board::*;
 use game_logic::*;
@@ -27,6 +27,8 @@ fn main() {
         .add_event::<ScaledDragEvent>()
         .add_event::<TileDragEvent>()
         .add_event::<PlaceholderTileDropEvent>()
+        // Disable bevy_mod_picking logging.
+        .insert_resource(State::new(DebugPickingMode::Disabled))
         .add_systems(Startup, setup)
         .add_systems(
             Update,

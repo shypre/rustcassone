@@ -49,7 +49,8 @@ pub fn handle_tile_drop_event(
         // Dropped entity must be a non-placeholder tile.
         let Ok((mut _dropped, mut dropped_transform, dropped_tile_info)) = q.get_mut(event.dropped)
         else {
-            panic!("uh oh not found: {:?}", event.dropped)
+            println!("dropped is not a tile, ignoring");
+            return
         };
         if dropped_tile_info.tile_idx >= PLACEHOLDER_TILE_OFFSET {
             println!("target is a placeholder tile, ignoring");
