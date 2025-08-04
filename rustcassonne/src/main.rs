@@ -14,6 +14,7 @@ use bevy::{input::mouse::MouseButtonInput, prelude::*, sprite::MaterialMesh2dBun
 use bevy_eventlistener::prelude::*;
 use bevy_mod_picking::{debug::DebugPickingMode, prelude::*};
 
+use players::NUM_MEEPLES;
 use game_board::*;
 use game_logic::*;
 use tiles::*;
@@ -124,7 +125,7 @@ fn setup(
         Color::INDIGO,
     ] {
         let mut x_offset: f32 = 300.0;
-        for _i in 0..8 {
+        for _i in 0..NUM_MEEPLES {
             let mut transform = Transform::from_translation(Vec3::new(x_offset, y_offset, 5.0));
             transform.rotate_z(PI / 4.0);
             commands.spawn((
