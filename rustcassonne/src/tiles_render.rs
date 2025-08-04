@@ -79,7 +79,7 @@ pub fn handle_scaled_drag_event(
 ) {
     for event in drag_event.iter() {
         let e = event.0;
-        info!("cube {:?} drag_event {:?}", event.0, event.1);
+        info!("cube {:?} scaled_drag_event {:?}", event.0, event.1);
         if let Ok((_e, mut e_transform)) = q.get_mut(e) {
             let mut translate = event.1.extend(0.0);
             // it's now reversed for some reason, didn't used to be.
@@ -87,43 +87,6 @@ pub fn handle_scaled_drag_event(
             e_transform.translation += translate * camera_q.single().1.scale;
         } else {
             println!("uh oh not found: {:?}", e);
-        }
-    }
-}
-
-// Same as above but drags
-#[derive(Event)]
-pub struct TileDragEvent(Entity, Vec2);
-
-impl From<ListenerInput<Pointer<Drag>>> for TileDragEvent {
-    fn from(event: ListenerInput<Pointer<Drag>>) -> Self {
-        TileDragEvent(event.target, event.delta)
-    }
-}
-
-pub fn handle_tile_drag_event(
-    mut drag_event: EventReader<TileDragEvent>,
-    mut q: Query<(Entity, &mut Transform, &TileEntityInfo)>,
-    camera_q: Query<(&Camera, &OrthographicProjection, &GlobalTransform), With<MainCamera>>,
-) {
-    for event in drag_event.iter() {
-        let q_tile_info: TileEntityInfo;
-        info!("tile {:?} drag_event {:?}", event.0, event.1);
-        if let Ok((_e, mut _e_transform, tile_info)) = q.get(event.0) {
-            q_tile_info = tile_info.clone();
-        } else {
-            println!("uh oh");
-            return;
-        }
-
-        let mut translation: Vec3 = event.1.extend(0.0);
-        // it's now reversed for some reason, didn't used to be.
-        translation.y *= -1.0;
-        translation *= camera_q.single().1.scale;
-        for mut ent in q.iter_mut() {
-            if ent.2.tile_idx == q_tile_info.tile_idx {
-                ent.1.translation += translation;
-            }
         }
     }
 }
@@ -282,7 +245,6 @@ pub fn create_areas(
                 should_block_lower: true,
                 should_emit_events: true,
             }), // Re-enable picking
-            // On::<Pointer<Drag>>::send_event::<TileDragEvent>(),
             On::<Pointer<Drag>>::send_event::<ScaledDragEvent>(),
         ))
         .id();

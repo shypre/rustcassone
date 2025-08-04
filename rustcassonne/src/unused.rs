@@ -1,8 +1,7 @@
 use bevy::{
-    input::mouse::MouseButtonInput, input::ButtonState, prelude::*,
-    sprite::MaterialMesh2dBundle,
+    input::mouse::MouseButtonInput, input::ButtonState, prelude::*, sprite::MaterialMesh2dBundle,
 };
-use bevy_eventlistener::{prelude::*};
+use bevy_eventlistener::prelude::*;
 use bevy_mod_picking::prelude::*;
 
 use crate::tiles_render::*;

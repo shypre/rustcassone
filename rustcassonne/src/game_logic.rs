@@ -28,14 +28,14 @@ pub fn handle_tile_drop_event(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     for event in drop_event.iter() {
-        info!(
+        println!(
             "drop_event target: {:?}, dropped: {:?}, hit_position: {:?}",
             event.target, event.dropped, event.position
         );
         let t_transform: Transform;
         let t_tile_index: TileIndex;
         {
-            let Ok((target, target_transform, target_tile_info)) = q.get_mut(event.target) else {
+            let Ok((_target, target_transform, target_tile_info)) = q.get_mut(event.target) else {
                 panic!("uh oh not found: {:?}", event.target)
             };
             // Target must be a placeholder tile
@@ -50,10 +50,18 @@ pub fn handle_tile_drop_event(
         let Ok((mut _dropped, mut dropped_transform, dropped_tile_info)) = q.get_mut(event.dropped)
         else {
             println!("dropped is not a tile, ignoring");
-            return
+            return;
         };
         if dropped_tile_info.tile_idx >= PLACEHOLDER_TILE_OFFSET {
             println!("target is a placeholder tile, ignoring");
+            return;
+        }
+        // If dropped is already part of board, ignore.
+        if gameplay_data
+            .board_tile_matrix_inverse
+            .contains_key(&dropped_tile_info.tile_idx)
+        {
+            println!("dropped is already in game board, ignoring");
             return;
         }
 
@@ -307,10 +315,18 @@ fn replace_placeholder_tile_on_board(
 
     // Remove drag function for the new tile.
     // TODO: still crashes when the tile is dragged over placeholder
-    commands.entity(target_tile_data.0).remove::<On::<Pointer<Drag>>>();
-    commands.entity(target_tile_data.0).remove::<On::<Pointer<Drop>>>();
-    commands.entity(target_tile_data.0).remove::<On::<Pointer<DragStart>>>();
-    commands.entity(target_tile_data.0).remove::<On::<Pointer<DragEnd>>>();
+    commands
+        .entity(target_tile_data.0)
+        .remove::<On<Pointer<Drag>>>();
+    commands
+        .entity(target_tile_data.0)
+        .remove::<On<Pointer<Drop>>>();
+    commands
+        .entity(target_tile_data.0)
+        .remove::<On<Pointer<DragStart>>>();
+    commands
+        .entity(target_tile_data.0)
+        .remove::<On<Pointer<DragEnd>>>();
 
     // insert placeholder tiles around new tile
     for dir in NEIGHBOR_COORDS {
