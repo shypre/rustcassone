@@ -21,7 +21,13 @@ use tiles_render::*;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                title: "Rustcassonne".to_string(),
+                ..default()
+            }),
+            ..default()
+        }))
         .add_plugins(DefaultPickingPlugins)
         .add_event::<MouseButtonInput>()
         .add_event::<ScaledDragEvent>()
