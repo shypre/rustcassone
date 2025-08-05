@@ -14,3 +14,5 @@ pub struct Player {
     pub meeples: Vec<MeepleIndex>,
     pub points: i32,
 }
+
+pub const NUM_MEEPLES: i32 = 7;
