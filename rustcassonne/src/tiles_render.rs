@@ -5,12 +5,8 @@ use crate::myshapes::*;
 use crate::tiles::*;
 
 use bevy::prelude::shape::Circle;
-use bevy::{
-    input::mouse::MouseButtonInput, math::vec4, prelude::*, render::camera::RenderTarget,
-    render::mesh::Mesh, sprite::MaterialMesh2dBundle, window::PrimaryWindow,
-};
+use bevy::{prelude::*, render::mesh::Mesh, sprite::MaterialMesh2dBundle};
 use bevy_eventlistener::{callbacks::ListenerInput, prelude::*};
-use bevy_mod_picking::backend::HitData;
 use bevy_mod_picking::prelude::*;
 
 /// Used to help identify our main camera
@@ -186,9 +182,9 @@ pub struct AreaRenderDatas {
 }
 
 pub fn create_areas(
-    mut commands: &mut Commands,
-    mut meshes: &mut ResMut<Assets<Mesh>>,
-    mut materials: &mut ResMut<Assets<ColorMaterial>>,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
     tile_data: &GameTileData,
     tile_idx: TileIndex,
     mouse_world_pos: Vec2,
@@ -802,10 +798,10 @@ pub fn create_PPPP_0123() -> Vec<AreaRenderDatas> {
 pub fn create_tile(
     tile_idx: TileIndex,
     window: &Window,
-    mut tile_data: &GameTileData,
-    mut commands: &mut Commands,
-    mut meshes: &mut ResMut<Assets<Mesh>>,
-    mut materials: &mut ResMut<Assets<ColorMaterial>>,
+    tile_data: &GameTileData,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
     camera: &Camera,
     camera_transform: &GlobalTransform,
 ) {
@@ -866,9 +862,9 @@ pub fn create_tile(
 }
 pub fn create_placeholder_tile(
     placeholder_tile_idx: TileIndex,
-    mut commands: &mut Commands,
-    mut meshes: &mut ResMut<Assets<Mesh>>,
-    mut materials: &mut ResMut<Assets<ColorMaterial>>,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
     pos: Vec2,
 ) {
     commands.spawn((

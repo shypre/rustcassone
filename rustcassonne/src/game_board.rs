@@ -1,25 +1,11 @@
-use crate::myshapes::*;
 use crate::tiles::*;
 
-use std::f32::consts::PI;
-
-use bevy::{
-    input::mouse::MouseButtonInput, input::ButtonState, prelude::*, render::camera::RenderTarget,
-    sprite::MaterialMesh2dBundle, window::PrimaryWindow,
-};
-use bevy_eventlistener::{callbacks::ListenerInput, prelude::*};
-use bevy_mod_picking::prelude::*;
-use bevy_mod_raycast::{
-    system_param::{Raycast, RaycastSettings},
-    *,
-};
+use bevy::prelude::*;
 use petgraph::{
-    data::FromElements,
-    dot::{Config, Dot},
+    dot::Dot,
     stable_graph::{NodeIndex, StableGraph},
     Undirected,
 };
-use rand::Rng;
 use std::collections::HashMap;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

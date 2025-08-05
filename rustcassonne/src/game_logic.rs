@@ -1,12 +1,7 @@
 use std::f32::consts::PI;
-use std::vec;
 
-use bevy::{
-    input::mouse::MouseButtonInput, math::vec4, prelude::*, render::camera::RenderTarget,
-    render::mesh::Mesh, sprite::MaterialMesh2dBundle, window::PrimaryWindow,
-};
-use bevy_eventlistener::{callbacks::ListenerInput, prelude::*};
-use bevy_mod_picking::backend::HitData;
+use bevy::{prelude::*, render::mesh::Mesh};
+use bevy_eventlistener::prelude::*;
 use bevy_mod_picking::prelude::*;
 use bevy_mod_raycast::system_param::Raycast;
 use bevy_mod_raycast::system_param::RaycastSettings;
@@ -14,7 +9,6 @@ use bevy_mod_raycast::Ray3d;
 use rand::Rng;
 
 use crate::game_board::*;
-use crate::myshapes::*;
 use crate::tiles::*;
 use crate::tiles_render::*;
 
@@ -83,13 +77,13 @@ pub fn handle_tile_drop_event(
 pub fn spawn_tile(
     keys: Res<Input<KeyCode>>,
     window: Query<&Window>,
-    mut tile_data: ResMut<GameTileData>,
+    tile_data: ResMut<GameTileData>,
     mut gameplay_data: ResMut<GameplayData>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut q: Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
-    mut camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
+    q: Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
+    camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
 ) {
     if keys.just_pressed(KeyCode::T) {
         if gameplay_data.unspawned_tiles.len() == 0 {
@@ -133,13 +127,13 @@ pub fn spawn_tile(
 pub fn spawn_placeholder_tile(
     keys: Res<Input<KeyCode>>,
     window: Query<&Window>,
-    mut tile_data: ResMut<GameTileData>,
+    tile_data: ResMut<GameTileData>,
     mut gameplay_data: ResMut<GameplayData>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut q: Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
-    mut camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
+    q: Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
+    camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
 ) {
     if keys.just_pressed(KeyCode::Y) {
         println!("spawn placeholder tile");
@@ -158,9 +152,9 @@ pub fn rotate_tile(
     keys: Res<Input<KeyCode>>,
     window: Query<&Window>,
     mut raycast: Raycast,
-    mut tile_data: ResMut<GameTileData>,
+    tile_data: ResMut<GameTileData>,
     mut q: Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
-    mut camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
+    camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
 ) {
     if keys.just_pressed(KeyCode::R) {
         println!("rotate tile");
@@ -197,7 +191,7 @@ pub fn rotate_tile(
 
 fn get_data_of_tile(
     tile_index: TileIndex,
-    mut q: &mut Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
+    q: &mut Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
 ) -> Option<(Entity, Transform, TileEntityInfo)> {
     for data in q.iter() {
         if data.2.tile_idx == tile_index {
@@ -210,12 +204,12 @@ fn get_data_of_tile(
 
 // Nonexistant adjacent_tile results in placing at mouse position
 fn add_placeholder_tile_and_maybe_init_board(
-    mut gameplay_data: &mut ResMut<GameplayData>,
+    gameplay_data: &mut ResMut<GameplayData>,
     window: Query<&Window>,
-    mut commands: &mut Commands,
-    mut meshes: &mut ResMut<Assets<Mesh>>,
-    mut materials: &mut ResMut<Assets<ColorMaterial>>,
-    mut camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+    camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
 ) {
     let next_placeholder_index = gameplay_data.next_placeholder_index;
     create_placeholder_tile(
@@ -245,13 +239,13 @@ fn add_placeholder_tile_and_maybe_init_board(
 }
 
 fn replace_placeholder_tile_on_board(
-    mut gameplay_data: &mut ResMut<GameplayData>,
+    gameplay_data: &mut ResMut<GameplayData>,
     replacement_tile_index: TileIndex,
     origin_tile_index: TileIndex,
-    mut commands: &mut Commands,
-    mut meshes: &mut ResMut<Assets<Mesh>>,
-    mut materials: &mut ResMut<Assets<ColorMaterial>>,
-    mut q: &mut Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+    q: &mut Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
 ) {
     let op_origin_tile_data = get_data_of_tile(origin_tile_index, q);
     {
