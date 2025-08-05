@@ -82,7 +82,7 @@ pub fn spawn_tile(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    q: Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
+    _q: Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
     camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
 ) {
     if keys.just_pressed(KeyCode::T) {
@@ -127,12 +127,12 @@ pub fn spawn_tile(
 pub fn spawn_placeholder_tile(
     keys: Res<Input<KeyCode>>,
     window: Query<&Window>,
-    tile_data: ResMut<GameTileData>,
+    _tile_data: ResMut<GameTileData>,
     mut gameplay_data: ResMut<GameplayData>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    q: Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
+    _q: Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
     camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
 ) {
     if keys.just_pressed(KeyCode::Y) {
@@ -152,7 +152,7 @@ pub fn rotate_tile(
     keys: Res<Input<KeyCode>>,
     window: Query<&Window>,
     mut raycast: Raycast,
-    tile_data: ResMut<GameTileData>,
+    _tile_data: ResMut<GameTileData>,
     mut q: Query<(Entity, &mut Transform, &mut TileEntityInfo), Without<MainCamera>>,
     camera_q: Query<(Entity, &mut Camera, &mut Transform, &GlobalTransform), With<MainCamera>>,
 ) {
