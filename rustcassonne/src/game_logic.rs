@@ -218,6 +218,7 @@ fn add_placeholder_tile_and_maybe_init_board(
         meshes,
         materials,
         mouse_to_world_position(window.single(), camera_q.single().1, camera_q.single().3),
+        true
     );
     gameplay_data.next_placeholder_index += 1;
 
@@ -335,7 +336,7 @@ fn replace_placeholder_tile_on_board(
             };
 
             let next_placeholder_index = gameplay_data.next_placeholder_index;
-            create_placeholder_tile(next_placeholder_index, commands, meshes, materials, new_pos);
+            create_placeholder_tile(next_placeholder_index, commands, meshes, materials, new_pos, false);
             gameplay_data.next_placeholder_index += 1;
             gameplay_data
                 .board_tile_matrix

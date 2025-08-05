@@ -866,8 +866,9 @@ pub fn create_placeholder_tile(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
     pos: Vec2,
+    draggable: bool,
 ) {
-    commands.spawn((
+    let mut placeholder_tile_builder = commands.spawn((
         MaterialMesh2dBundle {
             mesh: meshes
                 .add(shape::Quad::new(Vec2::new(180., 180.)).into())
@@ -895,9 +896,13 @@ pub fn create_placeholder_tile(
         },
         PickableBundle::default(),
         RaycastPickTarget::default(), // Marker for the `bevy_picking_raycast` backend
-        On::<Pointer<DragStart>>::target_insert(Pickable::IGNORE), // Disable picking
-        On::<Pointer<DragEnd>>::target_insert(Pickable::default()), // Re-enable picking
-        On::<Pointer<Drag>>::send_event::<ScaledDragEvent>(),
         On::<Pointer<Drop>>::send_event::<PlaceholderTileDropEvent>(),
     ));
+    if draggable {
+        placeholder_tile_builder.insert((
+            On::<Pointer<DragStart>>::target_insert(Pickable::IGNORE), // Disable picking
+            On::<Pointer<DragEnd>>::target_insert(Pickable::default()), // Re-enable picking
+            On::<Pointer<Drag>>::send_event::<ScaledDragEvent>(),
+        ));
+    }
 }
